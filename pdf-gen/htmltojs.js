@@ -1,0 +1,3661 @@
+const puppeteer = require('puppeteer');
+
+async function convertHtmlToPdf(htmlContent, outputPath) {
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: [
+      '--no-sandbox',
+      '--disable-web-security',
+    ]
+  });
+
+  try {
+    const page = await browser.newPage();
+
+    // Add CSS to prevent component breaks and style the footer
+    const htmlWithStyles = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    /* Prevent component breaks */
+                    h1, h2, h3, h4, h5, h6, img, figure, pre, .company-update {
+                        break-inside: avoid;
+                        page-break-inside: avoid;
+                    }
+                </style>
+            </head>
+            <body>
+                ${htmlContent}
+            </body>
+            </html>
+        `;
+
+    // Set content and wait for load
+    await page.setContent(htmlWithStyles, {
+      waitUntil: 'networkidle0'
+    });
+
+    // Get the total number of pages
+    const pdf = await page.pdf({
+      path: outputPath,
+      format: 'A4',
+      margin: {
+        top: '40px',
+        right: '20px',
+        bottom: '90px', // Increased bottom margin for footer
+        left: '20px'
+      },
+      printBackground: true,
+      displayHeaderFooter: true,
+      headerTemplate: '<div></div>', // Empty header
+      footerTemplate: `
+                <style>
+                html {
+                    -webkit-print-color-adjust: exact;
+                }
+                </style>
+                <footer style="font-size: 14px; padding: 30px 10px 30px 10px; width: 100%;
+                        background-color: #f1f5f9;
+                        border-top: 1px solid #e2e8f0;
+                        font-family: 'Arial', sans-serif;
+                        margin-bottom: -20px;
+                        color: #475569;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 20px;">
+                        <span>© 2024 Financial News Corp.</span>
+                        <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
+                    </div>
+                </footer>
+            `,
+      preferCSSPageSize: false
+    });
+
+    console.log(`PDF successfully created at: ${outputPath}`);
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    throw error;
+  } finally {
+    await browser.close();
+  }
+}
+
+
+// Example usage
+const regex = /\/\*([\s\S]*?)\*\//g;
+
+const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CQNowReport</title>
+    <style>
+        *,
+::before,
+::after {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x: ;
+  --tw-pan-y: ;
+  --tw-pinch-zoom: ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position: ;
+  --tw-gradient-via-position: ;
+  --tw-gradient-to-position: ;
+  --tw-ordinal: ;
+  --tw-slashed-zero: ;
+  --tw-numeric-figure: ;
+  --tw-numeric-spacing: ;
+  --tw-numeric-fraction: ;
+  --tw-ring-inset: ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur: ;
+  --tw-brightness: ;
+  --tw-contrast: ;
+  --tw-grayscale: ;
+  --tw-hue-rotate: ;
+  --tw-invert: ;
+  --tw-saturate: ;
+  --tw-sepia: ;
+  --tw-drop-shadow: ;
+  --tw-backdrop-blur: ;
+  --tw-backdrop-brightness: ;
+  --tw-backdrop-contrast: ;
+  --tw-backdrop-grayscale: ;
+  --tw-backdrop-hue-rotate: ;
+  --tw-backdrop-invert: ;
+  --tw-backdrop-opacity: ;
+  --tw-backdrop-saturate: ;
+  --tw-backdrop-sepia: ;
+  --tw-contain-size: ;
+  --tw-contain-layout: ;
+  --tw-contain-paint: ;
+  --tw-contain-style: ;
+}
+
+::backdrop {
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-pan-x: ;
+  --tw-pan-y: ;
+  --tw-pinch-zoom: ;
+  --tw-scroll-snap-strictness: proximity;
+  --tw-gradient-from-position: ;
+  --tw-gradient-via-position: ;
+  --tw-gradient-to-position: ;
+  --tw-ordinal: ;
+  --tw-slashed-zero: ;
+  --tw-numeric-figure: ;
+  --tw-numeric-spacing: ;
+  --tw-numeric-fraction: ;
+  --tw-ring-inset: ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: rgb(59 130 246 / 0.5);
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  --tw-blur: ;
+  --tw-brightness: ;
+  --tw-contrast: ;
+  --tw-grayscale: ;
+  --tw-hue-rotate: ;
+  --tw-invert: ;
+  --tw-saturate: ;
+  --tw-sepia: ;
+  --tw-drop-shadow: ;
+  --tw-backdrop-blur: ;
+  --tw-backdrop-brightness: ;
+  --tw-backdrop-contrast: ;
+  --tw-backdrop-grayscale: ;
+  --tw-backdrop-hue-rotate: ;
+  --tw-backdrop-invert: ;
+  --tw-backdrop-opacity: ;
+  --tw-backdrop-saturate: ;
+  --tw-backdrop-sepia: ;
+  --tw-contain-size: ;
+  --tw-contain-layout: ;
+  --tw-contain-paint: ;
+  --tw-contain-style: ;
+}
+
+/*
+! tailwindcss v3.4.14 | MIT License | https://tailwindcss.com
+*/
+/*
+1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)
+2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)
+*/
+
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  /* 1 */
+  border-width: 0;
+  /* 2 */
+  border-style: solid;
+  /* 2 */
+  border-color: #e5e7eb;
+  /* 2 */
+}
+
+::before,
+::after {
+  --tw-content: '';
+}
+
+/*
+1. Use a consistent sensible line-height in all browsers.
+2. Prevent adjustments of font size after orientation changes in iOS.
+3. Use a more readable tab size.
+4. Use the user's configured  font-family by default.
+5. Use the user's configured  font-feature-settings by default.
+6. Use the user's configured  font-variation-settings by default.
+7. Disable tap highlights on iOS
+*/
+
+html,
+:host {
+  line-height: 1.5;
+  /* 1 */
+  -webkit-text-size-adjust: 100%;
+  /* 2 */
+  -moz-tab-size: 4;
+  /* 3 */
+  -o-tab-size: 4;
+  tab-size: 4;
+  /* 3 */
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  /* 4 */
+  font-feature-settings: normal;
+  /* 5 */
+  font-variation-settings: normal;
+  /* 6 */
+  -webkit-tap-highlight-color: transparent;
+  /* 7 */
+}
+
+/*
+1. Remove the margin in all browsers.
+2. Inherit line-height from  so users can set them as a class directly on the  element.
+*/
+
+body {
+  margin: 0;
+  /* 1 */
+  line-height: inherit;
+  /* 2 */
+}
+
+/*
+1. Add the correct height in Firefox.
+2. Correct the inheritance of border color in Firefox. (https://bugzilla.mozilla.org/show_bug.cgi?id=190655)
+3. Ensure horizontal rules are visible by default.
+*/
+
+hr {
+  height: 0;
+  /* 1 */
+  color: inherit;
+  /* 2 */
+  border-top-width: 1px;
+  /* 3 */
+}
+
+/*
+Add the correct text decoration in Chrome, Edge, and Safari.
+*/
+
+abbr:where([title]) {
+  -webkit-text-decoration: underline dotted;
+  text-decoration: underline dotted;
+}
+
+/*
+Remove the default font size and weight for headings.
+*/
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/*
+Reset links to optimize for opt-in styling instead of opt-out.
+*/
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+/*
+Add the correct font weight in Edge and Safari.
+*/
+
+b,
+strong {
+  font-weight: bolder;
+}
+
+/*
+1. Use the user's configured  font-family by default.
+2. Use the user's configured  font-feature-settings by default.
+3. Use the user's configured  font-variation-settings by default.
+4. Correct the odd  font sizing in all browsers.
+*/
+
+code,
+kbd,
+samp,
+pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  /* 1 */
+  font-feature-settings: normal;
+  /* 2 */
+  font-variation-settings: normal;
+  /* 3 */
+  font-size: 1em;
+  /* 4 */
+}
+
+/*
+Add the correct font size in all browsers.
+*/
+
+small {
+  font-size: 80%;
+}
+
+/*
+Prevent  and  elements from affecting the line height in all browsers.
+*/
+
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+sup {
+  top: -0.5em;
+}
+
+/*
+1. Remove text indentation from table contents in Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=999088, https://bugs.webkit.org/show_bug.cgi?id=201297)
+2. Correct table border color inheritance in all Chrome and Safari. (https://bugs.chromium.org/p/chromium/issues/detail?id=935729, https://bugs.webkit.org/show_bug.cgi?id=195016)
+3. Remove gaps between table borders by default.
+*/
+
+table {
+  text-indent: 0;
+  /* 1 */
+  border-color: inherit;
+  /* 2 */
+  border-collapse: collapse;
+  /* 3 */
+}
+
+/*
+1. Change the font styles in all browsers.
+2. Remove the margin in Firefox and Safari.
+3. Remove default padding in all browsers.
+*/
+
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit;
+  /* 1 */
+  font-feature-settings: inherit;
+  /* 1 */
+  font-variation-settings: inherit;
+  /* 1 */
+  font-size: 100%;
+  /* 1 */
+  font-weight: inherit;
+  /* 1 */
+  line-height: inherit;
+  /* 1 */
+  letter-spacing: inherit;
+  /* 1 */
+  color: inherit;
+  /* 1 */
+  margin: 0;
+  /* 2 */
+  padding: 0;
+  /* 3 */
+}
+
+/*
+Remove the inheritance of text transform in Edge and Firefox.
+*/
+
+button,
+select {
+  text-transform: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Remove default button styles.
+*/
+
+button,
+input:where([type='button']),
+input:where([type='reset']),
+input:where([type='submit']) {
+  -webkit-appearance: button;
+  /* 1 */
+  background-color: transparent;
+  /* 2 */
+  background-image: none;
+  /* 2 */
+}
+
+/*
+Use the modern Firefox focus style for all focusable elements.
+*/
+
+:-moz-focusring {
+  outline: auto;
+}
+
+/*
+Remove the additional  styles in Firefox. (https://github.com/mozilla/gecko-dev/blob/2f9eacd9d3d995c937b4251a5557d95d494c9be1/layout/style/res/forms.css#L728-L737)
+*/
+
+:-moz-ui-invalid {
+  box-shadow: none;
+}
+
+/*
+Add the correct vertical alignment in Chrome and Firefox.
+*/
+
+progress {
+  vertical-align: baseline;
+}
+
+/*
+Correct the cursor style of increment and decrement buttons in Safari.
+*/
+
+::-webkit-inner-spin-button,
+::-webkit-outer-spin-button {
+  height: auto;
+}
+
+/*
+1. Correct the odd appearance in Chrome and Safari.
+2. Correct the outline style in Safari.
+*/
+
+[type='search'] {
+  -webkit-appearance: textfield;
+  /* 1 */
+  outline-offset: -2px;
+  /* 2 */
+}
+
+/*
+Remove the inner padding in Chrome and Safari on macOS.
+*/
+
+::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+/*
+1. Correct the inability to style clickable types in iOS and Safari.
+2. Change font properties to  in Safari.
+*/
+
+::-webkit-file-upload-button {
+  -webkit-appearance: button;
+  /* 1 */
+  font: inherit;
+  /* 2 */
+}
+
+/*
+Add the correct display in Chrome and Safari.
+*/
+
+summary {
+  display: list-item;
+}
+
+/*
+Removes the default spacing and border for appropriate elements.
+*/
+
+blockquote,
+dl,
+dd,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+hr,
+figure,
+p,
+pre {
+  margin: 0;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+ol,
+ul,
+menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+Reset default styling for dialogs.
+*/
+dialog {
+  padding: 0;
+}
+
+/*
+Prevent resizing textareas horizontally by default.
+*/
+
+textarea {
+  resize: vertical;
+}
+
+/*
+1. Reset the default placeholder opacity in Firefox. (https://github.com/tailwindlabs/tailwindcss/issues/3300)
+2. Set the default placeholder color to the user's configured gray 400 color.
+*/
+
+input::-moz-placeholder,
+textarea::-moz-placeholder {
+  opacity: 1;
+  /* 1 */
+  color: #9ca3af;
+  /* 2 */
+}
+
+input::placeholder,
+textarea::placeholder {
+  opacity: 1;
+  /* 1 */
+  color: #9ca3af;
+  /* 2 */
+}
+
+/*
+Set the default cursor for buttons.
+*/
+
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+/*
+Make sure disabled buttons don't get the pointer cursor.
+*/
+:disabled {
+  cursor: default;
+}
+
+/*
+1. Make replaced elements  by default. (https://github.com/mozdevs/cssremedy/issues/14)
+2. Add  to align replaced elements more sensibly by default. (https://github.com/jensimmons/cssremedy/issues/14#issuecomment-634934210)
+This can trigger a poorly considered lint error in some tools but is included by design.
+*/
+
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: block;
+  /* 1 */
+  vertical-align: middle;
+  /* 2 */
+}
+
+/*
+Constrain images and videos to the parent width and preserve their intrinsic aspect ratio. (https://github.com/mozdevs/cssremedy/issues/14)
+*/
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Make elements with the HTML hidden attribute stay hidden by default */
+[hidden]:where(:not([hidden="until-found"])) {
+  display: none;
+}
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 3.9%;
+  --primary: 0 0% 9%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 0 0% 96.1%;
+  --secondary-foreground: 0 0% 9%;
+  --muted: 0 0% 96.1%;
+  --muted-foreground: 0 0% 45.1%;
+  --accent: 0 0% 96.1%;
+  --accent-foreground: 0 0% 9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 89.8%;
+  --input: 0 0% 89.8%;
+  --ring: 0 0% 3.9%;
+  --chart-1: 12 76% 61%;
+  --chart-2: 173 58% 39%;
+  --chart-3: 197 37% 24%;
+  --chart-4: 43 74% 66%;
+  --chart-5: 27 87% 67%;
+  --radius: 0.5rem;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.relative {
+  position: relative;
+}
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.mb-12 {
+  margin-bottom: 3rem;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
+.mt-1 {
+  margin-top: 0.25rem;
+}
+
+.mt-12 {
+  margin-top: 3rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.inline-flex {
+  display: inline-flex;
+}
+
+.table {
+  display: table;
+}
+
+.grid {
+  display: grid;
+}
+
+.h-10 {
+  height: 2.5rem;
+}
+
+.h-12 {
+  height: 3rem;
+}
+
+.h-3 {
+  height: 0.75rem;
+}
+
+.h-4 {
+  height: 1rem;
+}
+
+.h-6 {
+  height: 1.5rem;
+}
+
+.h-8 {
+  height: 2rem;
+}
+
+.h-9 {
+  height: 2.25rem;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.w-12 {
+  width: 3rem;
+}
+
+.w-3 {
+  width: 0.75rem;
+}
+
+.w-4 {
+  width: 1rem;
+}
+
+.w-6 {
+  width: 1.5rem;
+}
+
+.w-9 {
+  width: 2.25rem;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.w-screen {
+  width: 100vw;
+}
+
+.max-w-7xl {
+  max-width: 80rem;
+}
+
+.shrink-0 {
+  flex-shrink: 0;
+}
+
+.caption-bottom {
+  caption-side: bottom;
+}
+
+.list-inside {
+  list-style-position: inside;
+}
+
+.list-disc {
+  list-style-type: disc;
+}
+
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-1 {
+  gap: 0.25rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.gap-6 {
+  gap: 1.5rem;
+}
+
+.space-y-1> :not([hidden])~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.25rem * var(--tw-space-y-reverse));
+}
+
+.space-y-1\.5> :not([hidden])~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.375rem * var(--tw-space-y-reverse));
+}
+
+.space-y-3> :not([hidden])~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));
+}
+
+.space-y-4> :not([hidden])~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1rem * var(--tw-space-y-reverse));
+}
+
+.overflow-auto {
+  overflow: auto;
+}
+
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+
+.rounded {
+  border-radius: 0.25rem;
+}
+
+.rounded-full {
+  border-radius: 9999px;
+}
+
+.rounded-lg {
+  border-radius: var(--radius);
+}
+
+.rounded-md {
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.rounded-xl {
+  border-radius: 0.75rem;
+}
+
+.rounded-t-2xl {
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+}
+
+.rounded-t-lg {
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+}
+
+.rounded-t-xl {
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
+}
+
+.border {
+  border-width: 1px;
+}
+
+.border-b {
+  border-bottom-width: 1px;
+}
+
+.border-t {
+  border-top-width: 1px;
+}
+
+.border-input {
+  border-color: hsl(var(--input));
+}
+
+.border-transparent {
+  border-color: transparent;
+}
+
+.bg-background {
+  background-color: hsl(var(--background));
+}
+
+.bg-card {
+  background-color: hsl(var(--card));
+}
+
+.bg-destructive {
+  background-color: hsl(var(--destructive));
+}
+
+.bg-gray-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 246 / var(--tw-bg-opacity));
+}
+
+.bg-green-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(220 252 231 / var(--tw-bg-opacity));
+}
+
+.bg-muted {
+  background-color: hsl(var(--muted));
+}
+
+.bg-muted\/50 {
+  background-color: hsl(var(--muted) / 0.5);
+}
+
+.bg-primary {
+  background-color: hsl(var(--primary));
+}
+
+.bg-red-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 226 226 / var(--tw-bg-opacity));
+}
+
+.bg-secondary {
+  background-color: hsl(var(--secondary));
+}
+
+.bg-white {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+}
+
+.p-2 {
+  padding: 0.5rem;
+}
+
+.p-3 {
+  padding: 0.75rem;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.p-6 {
+  padding: 1.5rem;
+}
+
+.p-8 {
+  padding: 2rem;
+}
+
+.px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.px-2\.5 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+
+.px-3 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.px-8 {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.py-0\.5 {
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+}
+
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.py-3 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.pb-4 {
+  padding-bottom: 1rem;
+}
+
+.pt-0 {
+  padding-top: 0px;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.align-middle {
+  vertical-align: middle;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+.text-base {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.leading-none {
+  line-height: 1;
+}
+
+.tracking-tight {
+  letter-spacing: -0.025em;
+}
+
+.text-card-foreground {
+  color: hsl(var(--card-foreground));
+}
+
+.text-destructive-foreground {
+  color: hsl(var(--destructive-foreground));
+}
+
+.text-foreground {
+  color: hsl(var(--foreground));
+}
+
+.text-gray-700 {
+  --tw-text-opacity: 1;
+  color: rgb(55 65 81 / var(--tw-text-opacity));
+}
+
+.text-green-600 {
+  --tw-text-opacity: 1;
+  color: rgb(22 163 74 / var(--tw-text-opacity));
+}
+
+.text-green-700 {
+  --tw-text-opacity: 1;
+  color: rgb(21 128 61 / var(--tw-text-opacity));
+}
+
+.text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+
+.text-primary {
+  color: hsl(var(--primary));
+}
+
+.text-primary-foreground {
+  color: hsl(var(--primary-foreground));
+}
+
+.text-red-600 {
+  --tw-text-opacity: 1;
+  color: rgb(220 38 38 / var(--tw-text-opacity));
+}
+
+.text-red-700 {
+  --tw-text-opacity: 1;
+  color: rgb(185 28 28 / var(--tw-text-opacity));
+}
+
+.text-secondary-foreground {
+  color: hsl(var(--secondary-foreground));
+}
+
+.underline-offset-4 {
+  text-underline-offset: 4px;
+}
+
+.opacity-90 {
+  opacity: 0.9;
+}
+
+.shadow {
+  --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-sm {
+  --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.outline {
+  outline-style: solid;
+}
+
+.filter {
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
+.transition-colors {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+@keyframes enter {
+
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1)) rotate(var(--tw-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+
+  to {
+    opacity: var(--tw-exit-opacity, 1);
+    transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0) scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1)) rotate(var(--tw-exit-rotate, 0));
+  }
+}
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+
+  a:hover {
+    color: #747bff;
+  }
+
+  button {
+    background-color: #f9f9f9;
+  }
+}
+
+.hover\:bg-accent:hover {
+  background-color: hsl(var(--accent));
+}
+
+.hover\:bg-destructive\/90:hover {
+  background-color: hsl(var(--destructive) / 0.9);
+}
+
+.hover\:bg-gray-200:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(229 231 235 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-green-200:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(187 247 208 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-muted\/50:hover {
+  background-color: hsl(var(--muted) / 0.5);
+}
+
+.hover\:bg-primary\/80:hover {
+  background-color: hsl(var(--primary) / 0.8);
+}
+
+.hover\:bg-primary\/90:hover {
+  background-color: hsl(var(--primary) / 0.9);
+}
+
+.hover\:bg-red-200:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 202 202 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-secondary\/80:hover {
+  background-color: hsl(var(--secondary) / 0.8);
+}
+
+.hover\:text-accent-foreground:hover {
+  color: hsl(var(--accent-foreground));
+}
+
+.hover\:underline:hover {
+  text-decoration-line: underline;
+}
+
+.focus\:outline-none:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.focus\:ring-2:focus {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+
+.focus\:ring-ring:focus {
+  --tw-ring-color: hsl(var(--ring));
+}
+
+.focus\:ring-offset-2:focus {
+  --tw-ring-offset-width: 2px;
+}
+
+.focus-visible\:outline-none:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.focus-visible\:ring-1:focus-visible {
+  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+
+.focus-visible\:ring-ring:focus-visible {
+  --tw-ring-color: hsl(var(--ring));
+}
+
+.disabled\:pointer-events-none:disabled {
+  pointer-events: none;
+}
+
+.disabled\:opacity-50:disabled {
+  opacity: 0.5;
+}
+
+.data-\[state\=selected\]\:bg-muted[data-state="selected"] {
+  background-color: hsl(var(--muted));
+}
+
+@media (min-width: 640px) {
+
+  .sm\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+
+  .lg\:grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+@media print {
+
+  .print\:rounded-none {
+    border-radius: 0px;
+  }
+
+  .print\:bg-white {
+    --tw-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+  }
+
+  .print\:p-0 {
+    padding: 0px;
+  }
+}
+
+.\[\&\:has\(\[role\=checkbox\]\)\]\:pr-0:has([role=checkbox]) {
+  padding-right: 0px;
+}
+
+.\[\&\>\[role\=checkbox\]\]\:translate-y-\[2px\]>[role=checkbox] {
+  --tw-translate-y: 2px;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.\[\&\>tr\]\:last\:border-b-0:last-child>tr {
+  border-bottom-width: 0px;
+}
+
+.\[\&_svg\]\:pointer-events-none svg {
+  pointer-events: none;
+}
+
+.\[\&_svg\]\:size-4 svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.\[\&_svg\]\:shrink-0 svg {
+  flex-shrink: 0;
+}
+
+.\[\&_tr\:last-child\]\:border-0 tr:last-child {
+  border-width: 0px;
+}
+
+.\[\&_tr\]\:border-b tr {
+  border-bottom-width: 1px;
+}
+
+#root {
+  margin: 0 auto;
+  text-align: center;
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+    </style>
+</head>
+<body>
+  <div id="root">
+    <div class="min-h-screen bg-background p-4 w-screen">
+      <div class="max-w-7xl mx-auto">
+        <div class="bg-white w-full relative">
+          <div class="p-4 pb-4">
+            
+        <header class="bg-primary text-primary-foreground p-6 rounded-t-2xl mb-8 avoid-break">
+          <div class="flex items-center gap-4">
+<svg id="Layer_29" data-name="Layer 29" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 595.28 595.28" width="70" height="70">
+  <defs>
+    <style>
+      .cls-1 {
+        filter: url(#drop-shadow-2);
+      }
+
+      .cls-1, .cls-2 {
+        fill: none;
+        stroke: #fff;
+        stroke-linejoin: round;
+        stroke-width: 15px;
+      }
+
+      .cls-2 {
+        filter: url(#drop-shadow-1);
+      }
+    </style>
+    <filter id="drop-shadow-1" filterUnits="userSpaceOnUse">
+      <feOffset dx="7" dy="7"/>
+      <feGaussianBlur result="blur" stdDeviation="2.83"/>
+      <feFlood flood-color="#000" flood-opacity=".75"/>
+      <feComposite in2="blur" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="drop-shadow-2" filterUnits="userSpaceOnUse">
+      <feOffset dx="7" dy="7"/>
+      <feGaussianBlur result="blur-2" stdDeviation="5"/>
+      <feFlood flood-color="#000" flood-opacity=".75"/>
+      <feComposite in2="blur-2" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <rect y=".04" width="595.28" height="595.28"/>
+  <g>
+    <polyline class="cls-2" points="285.03 177.91 285.03 142.21 136.59 142.21 136.59 285.02 433.46 285.02 433.45 427.83 285.03 427.83 285.03 249.32"/>
+    <line class="cls-1" x1="458.68" y1="453.07" x2="433.45" y2="427.83"/>
+  </g>
+</svg>
+            <div>
+              <h1 class="text-3xl font-bold">Weekly Financial Update</h1>
+              <p class="text-sm opacity-90 text-left">Week ended 16th Nov 2024</p>
+            </div>
+          </div>
+        </header>
+    
+            <section class="mb-8 avoid-break">
+              <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-column w-6 h-6"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg>Market Overview</h2>
+              <div class="rounded-xl border bg-card text-card-foreground">
+                <div class="relative w-full overflow-auto">
+                  <table class="w-full caption-bottom text-sm">
+                    <thead class="[&_tr]:border-b">
+                      <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                        <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]">Company</th>
+                        <th class="h-10 px-2 align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-center">Weekly Close</th>
+                        <th class="h-10 px-2 align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-center">Weekly</th>
+                        <th class="h-10 px-2 align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-center">YTD</th>
+                      </tr>
+                    </thead>
+                    <tbody class="[&_tr:last-child]:border-0">
+                      
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/HDFCBANK.NS.png?height=30" class="h-4 rounded-sm"><span>HDFC Bank Limited (HDFCBANK)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹1766.30</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+3.0%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+20.3%</div>
+                </td>
+            </tr>
+        
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/RELIANCE.NS.png?height=30" class="h-4 rounded-sm"><span>Reliance Industries Limited (RELIANCE)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹1272.70</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-red-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>-2.3%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+10.3%</div>
+                </td>
+            </tr>
+        
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/LODHA.NS.png?height=30" class="h-4 rounded-sm"><span>Macrotech Developers Limited (LODHA)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹1187.50</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-red-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>-0.6%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+39.9%</div>
+                </td>
+            </tr>
+        
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/GPTINFRA.NS.png?height=30" class="h-4 rounded-sm"><span>GPT Infraprojects Limited (GPTINFRA)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹132.59</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-red-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>-3.5%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+109.8%</div>
+                </td>
+            </tr>
+        
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/TATAMOTORS.NS.png?height=30" class="h-4 rounded-sm"><span>Tata Motors Limited (TATAMOTORS)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹804.70</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-red-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>-2.4%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+23.6%</div>
+                </td>
+            </tr>
+        
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/3MINDIA.NS.png?height=30" class="h-4 rounded-sm"><span>3M India Limited (3MINDIA)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹34973.30</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-red-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>-3.1%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+13.4%</div>
+                </td>
+            </tr>
+        
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/ADANIPOWER.NS.png?height=30" class="h-4 rounded-sm"><span>Adani Power Limited (ADANIPOWER)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹578.95</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-red-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>-1.0%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+48.2%</div>
+                </td>
+            </tr>
+        
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/APCOTEXIND.NS.png?height=30" class="h-4 rounded-sm"><span>Apcotex Industries Limited (APCOTEXIND)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹391.50</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+0.2%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-red-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>-23.9%</div>
+                </td>
+            </tr>
+        
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/JIOFIN.NS.png?height=30" class="h-4 rounded-sm"><span>Jio Financial Services Limited (JIOFIN)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹312.00</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-red-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>-4.4%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+38.8%</div>
+                </td>
+            </tr>
+        
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/IRCON.NS.png?height=30" class="h-4 rounded-sm"><span>Ircon International Limited (IRCON)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹200.49</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-red-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>-4.5%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+28.2%</div>
+                </td>
+            </tr>
+        
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/NTPC.NS.png?height=30" class="h-4 rounded-sm"><span>NTPC Limited (NTPC)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹392.55</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-red-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>-2.1%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+63.6%</div>
+                </td>
+            </tr>
+        
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/ONGC.NS.png?height=30" class="h-4 rounded-sm"><span>Oil & Natural Gas Corporation Limited (ONGC)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹256.90</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-red-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>-3.2%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+38.2%</div>
+                </td>
+            </tr>
+        
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/IRFC.NS.png?height=30" class="h-4 rounded-sm"><span>Indian Railway Finance Corporation Limited (IRFC)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹147.40</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-red-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>-3.8%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+100.9%</div>
+                </td>
+            </tr>
+        
+            <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                <td class="p-2 align-middle font-medium">
+                    <div class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/ZOMATO.NS.png?height=30" class="h-4 rounded-sm"><span>Zomato Limited (ZOMATO)</span></div>
+                </td>
+                <td class="p-2 align-middle text-center">₹258.62</td>
+                <td class="p-2 align-middle text-center py-3">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+5.5%</div>
+                </td>
+                <td class="p-2 align-middle text-center">
+                    <div class="flex items-center justify-center gap-1 font-medium text-green-600"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>+111.6%</div>
+                </td>
+            </tr>
+        
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+            <section>
+              <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-newspaper w-6 h-6"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path><path d="M18 14h-8"></path><path d="M15 18h-5"></path><path d="M10 6h8v4h-8V6Z"></path></svg>Company Updates</h2>
+              <div class="grid grid-cols-1 gap-6">
+                
+            <div class="rounded-xl border bg-card text-card-foreground avoid-break">
+                <div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">
+                    <div class="font-semibold tracking-tight text-xl flex items-center justify-between"><span class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/HDFCBANK.NS.png?height=30" class="h-6 rounded-sm">HDFC Bank Limited (HDFCBANK)</span><span class="text-base text-green-600">₹1766.30</span></div>
+                </div>
+                <div class="p-4">
+                    
+                    <div class="space-y-4">
+                        
+                <div>
+                    <h4 class="font-semibold mb-2 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up w-4 h-4 ml-2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>Latest News</h4>
+                    <ul class="space-y-3">
+                       
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/earnings/earnings-slowdown-more-than-half-of-nifty-firms-report-lower-than-expected-profits-12862489.html" style="text-decoration: none; color: inherit;" target="_blank">Earnings Slowdown More Than Half Of Nifty Firms Report Lower Than Expected Profits</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.business-standard.com/finance/news/sme-agri-segments-to-drive-sbi-s-loan-growth-above-industry-average-124111101458_1.html" style="text-decoration: none; color: inherit;" target="_blank">SME, agri segments to drive SBI's loan growth above industry average</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.business-standard.com/pti-stories/national/mcap-of-6-of-top-10-most-valued-firms-erode-rs-1-55-lakh-cr-reliance-biggest-laggard-124111000123_1.html" style="text-decoration: none; color: inherit;" target="_blank">Mcap of 6 of top-10 most-valued firms erode Rs 1.55 trn; RIL top laggard</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/countdown-begins-niva-bupa-ipo-closes-today-gmp-up-4-should-you-apply-124111100284_1.html" style="text-decoration: none; color: inherit;" target="_blank">Countdown begins! Niva Bupa IPO closes today: GMP up 4%; should you apply?</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/markets/mcap-of-6-of-top-10-most-valued-firms-erode-rs-1-55-lakh-cr-reliance-biggest-laggard-12862200.html" style="text-decoration: none; color: inherit;" target="_blank">Mcap Of 6 Of Top 10 Most Valued Firms Erode Rs 1 55 Lakh Cr Reliance Biggest Laggard</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/mcap-of-6-of-top-10-most-valued-firms-erode-rs-1-55-lakh-cr-reliance-biggest-laggard/articleshow/115136515.cms" style="text-decoration: none; color: inherit;" target="_blank">Mcap of 6 of top-10 most-valued firms erode Rs 1.55 lakh cr; Reliance biggest laggard</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/ipo/niva-bupa-health-insurance-ipo-oversubscribed-1-8-times-on-day-3-check-gmp-subscription-status-other-details-11731337353277.html" style="text-decoration: none; color: inherit;" target="_blank">Niva Bupa Health Insurance IPO oversubscribed 1.8 times on Day 3; Check GMP, subscription status, other details</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/niva-bupa-healthcare-ipo-sails-through-on-last-day-of-bidding-process-check-gmp-other-details/articleshow/115166167.cms" style="text-decoration: none; color: inherit;" target="_blank">Niva Bupa Healthcare IPO sails through on last day of bidding process. Check GMP, other details</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/expert-view/2-top-stock-recommendations-from-aditya-arora/articleshow/115169476.cms" style="text-decoration: none; color: inherit;" target="_blank">2 top stock recommendations from Aditya Arora</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/industry/services/property-/-cstruction/hdfc-bank-to-divest-hdfc-house-other-realty-assets/articleshow/115189688.cms" style="text-decoration: none; color: inherit;" target="_blank">HDFC Bank to divest HDFC House, other realty assets</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/industry/services/property-/-cstruction/hdfc-bank-to-divest-hdfc-house-other-realty-assets/articleshow/115189688.cms" style="text-decoration: none; color: inherit;" target="_blank">HDFC Bank to divest HDFC House, other realty assets</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/industry/services/property-/-cstruction/hdfc-bank-to-divest-hdfc-house-other-realty-assets/articleshow/115189688.cms" style="text-decoration: none; color: inherit;" target="_blank">HDFC Bank to divest HDFC House, other realty assets</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/ipo/investors-subscribe-niva-bupa-ipo-1-80-times-offer-size-on-closing-day-124111101785_1.html" style="text-decoration: none; color: inherit;" target="_blank">Investors subscribe Niva Bupa IPO 1.80 times offer size on closing day</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/ipo/investors-subscribe-niva-bupa-ipo-1-80-times-offer-size-on-closing-day-124111101785_1.html" style="text-decoration: none; color: inherit;" target="_blank">Investors subscribe Niva Bupa IPO 1.80 times offer size on closing day</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.business-standard.com/finance/personal-finance/credit-card-rewards-benefits-cut-what-options-do-customers-have-124111100610_1.html" style="text-decoration: none; color: inherit;" target="_blank">Credit card rewards, benefits cut: What options do customers have?</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/ipo/investors-subscribe-niva-bupa-ipo-1-80-times-offer-size-on-closing-day-124111101785_1.html" style="text-decoration: none; color: inherit;" target="_blank">Investors subscribe Niva Bupa IPO 1.80 times offer size on closing day</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/niva-bupa-ipo-to-open-for-subscription-on-november-7-price-band-fixed-at-rs-70-74-per-share/articleshow/114928959.cms" style="text-decoration: none; color: inherit;" target="_blank">Niva Bupa IPO to open for subscription on November 7, price band fixed at Rs 70-74 per share</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/niva-bupa-health-ipo-opens-on-nov-5-check-gmp-dates-other-key-details-124110400124_1.html" style="text-decoration: none; color: inherit;" target="_blank">Niva Bupa Health IPO opens on Nov 7: Check GMP, dates, & other key details</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/hdfc-bank-share-price-today-latest-on-04112024-11730698590889.html" style="text-decoration: none; color: inherit;" target="_blank">Hdfc Bank Share Price Today on : Hdfc Bank share are down by -0.21%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/sbi-share-price-today-latest-on-04112024-11730698979661.html" style="text-decoration: none; color: inherit;" target="_blank">Sbi Share Price Today on : Sbi share are down by -1.47%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/blood-on-d-street-why-nifty-dropped-below-24-000-sensex-fell-1-500-pts-124110400320_1.html" style="text-decoration: none; color: inherit;" target="_blank">Blood on D Street: Why Nifty dropped below 24,000, Sensex fell 1,500 pts?</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://nsearchives.nseindia.com/corporate/HDFCBANK_04112024165651_SE_Intimation_04112024.pdf" style="text-decoration: none; color: inherit;" target="_blank">"HDFC Bank Announces Issuance of Duplicate Share Certificates Following Loss Notification"</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://nsearchives.nseindia.com/corporate/HDFCBANK_04112024165651_SE_Intimation_04112024.pdf" style="text-decoration: none; color: inherit;" target="_blank">"HDFC Bank Announces Issuance of Duplicate Share Certificates Following Loss Notification"</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://nsearchives.nseindia.com/corporate/HDFCBANK_04112024165651_SE_Intimation_04112024.pdf" style="text-decoration: none; color: inherit;" target="_blank">"HDFC Bank Announces Issuance of Duplicate Share Certificates Following Loss Notification"</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://nsearchives.nseindia.com/corporate/HDFCBANK_04112024165651_SE_Intimation_04112024.pdf" style="text-decoration: none; color: inherit;" target="_blank">"HDFC Bank Announces Issuance of Duplicate Share Certificates Following Loss Notification"</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://nsearchives.nseindia.com/corporate/HDFCBANK_04112024165651_SE_Intimation_04112024.pdf" style="text-decoration: none; color: inherit;" target="_blank">"HDFC Bank Announces Issuance of Duplicate Share Certificates Following Loss Notification"</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://nsearchives.nseindia.com/corporate/HDFCBANK_04112024165651_SE_Intimation_04112024.pdf" style="text-decoration: none; color: inherit;" target="_blank">"HDFC Bank Announces Issuance of Duplicate Share Certificates Following Loss Notification"</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://nsearchives.nseindia.com/corporate/HDFCBANK_04112024165651_SE_Intimation_04112024.pdf" style="text-decoration: none; color: inherit;" target="_blank">"HDFC Bank Announces Issuance of Duplicate Share Certificates Following Loss Notification"</a>
+                        </span>
+                    </li>
+                
+                    </ul>
+                </div>
+            
+                        
+                        
+                    </div>
+                </div>
+            </div>
+        
+            <div class="rounded-xl border bg-card text-card-foreground avoid-break">
+                <div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">
+                    <div class="font-semibold tracking-tight text-xl flex items-center justify-between"><span class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/RELIANCE.NS.png?height=30" class="h-6 rounded-sm">Reliance Industries Limited (RELIANCE)</span><span class="text-base text-red-600">₹1272.70</span></div>
+                </div>
+                <div class="p-4">
+                    
+                    <div class="space-y-4">
+                        
+                <div>
+                    <h4 class="font-semibold mb-2 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up w-4 h-4 ml-2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>Latest News</h4>
+                    <ul class="space-y-3">
+                       
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.business-standard.com/companies/news/elon-musk-s-starlink-moves-closer-to-india-licence-accepts-data-terms-124111101109_1.html" style="text-decoration: none; color: inherit;" target="_blank">Elon Musk's Starlink moves closer to India licence, accepts data terms</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/earnings/earnings-slowdown-more-than-half-of-nifty-firms-report-lower-than-expected-profits-12862489.html" style="text-decoration: none; color: inherit;" target="_blank">Earnings Slowdown More Than Half Of Nifty Firms Report Lower Than Expected Profits</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/tech/technology/swiggy-expands-leadership-team-with-two-senior-appointments/articleshow/115182460.cms" style="text-decoration: none; color: inherit;" target="_blank">Swiggy expands leadership team with two senior appointments</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/tech/technology/5-things-to-know-heres-all-about-jio-vs-starlink-battle-for-satellite-spectrum/videoshow/115182476.cms" style="text-decoration: none; color: inherit;" target="_blank">5 Things to know: Here’s all about Jio vs Starlink battle for satellite spectrum</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.business-standard.com/companies/news/supreme-court-dismisses-1994-sebi-appeal-against-ambani-s-reliance-entities-124111101209_1.html" style="text-decoration: none; color: inherit;" target="_blank">Supreme Court dismisses 1994 Sebi appeal against Ambani's Reliance entities</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.business-standard.com/companies/results/q2-results-today-hindalco-ongc-britannia-among-321-to-post-earnings-124111100218_1.html" style="text-decoration: none; color: inherit;" target="_blank">Q2 results today: Hindalco, ONGC, Britannia among 321 to post earnings</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.business-standard.com/pti-stories/national/mcap-of-6-of-top-10-most-valued-firms-erode-rs-1-55-lakh-cr-reliance-biggest-laggard-124111000123_1.html" style="text-decoration: none; color: inherit;" target="_blank">Mcap of 6 of top-10 most-valued firms erode Rs 1.55 trn; RIL top laggard</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/markets/mcap-of-6-of-top-10-most-valued-firms-erode-rs-1-55-lakh-cr-reliance-biggest-laggard-12862200.html" style="text-decoration: none; color: inherit;" target="_blank">Mcap Of 6 Of Top 10 Most Valued Firms Erode Rs 1 55 Lakh Cr Reliance Biggest Laggard</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/mcap-of-6-of-top-10-most-valued-firms-erode-rs-1-55-lakh-cr-reliance-biggest-laggard/articleshow/115136515.cms" style="text-decoration: none; color: inherit;" target="_blank">Mcap of 6 of top-10 most-valued firms erode Rs 1.55 lakh cr; Reliance biggest laggard</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/telecom/elon-musks-starlink-agrees-to-security-norms-licence-application-back-on-track-12862578.html" style="text-decoration: none; color: inherit;" target="_blank">Elon Musks Starlink Agrees To Security Norms Licence Application Back On Track</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.business-standard.com/industry/news/trai-to-finalise-satcom-spectrum-allocation-norm-suggestions-by-dec-15-124111101527_1.html" style="text-decoration: none; color: inherit;" target="_blank">Trai to finalise satcom spectrum allocation norm suggestions by Dec 15</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/sc-dismisses-sebis-appeals-against-sat-relief-for-reliance-promoters/articleshow/115188207.cms" style="text-decoration: none; color: inherit;" target="_blank">SC dismisses Sebi's appeals against SAT relief for Reliance, promoters</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/sc-dismisses-sebis-appeals-against-sat-relief-for-reliance-promoters/articleshow/115188207.cms" style="text-decoration: none; color: inherit;" target="_blank">SC dismisses Sebi's appeals against SAT relief for Reliance, promoters</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/sc-dismisses-sebis-appeals-against-sat-relief-for-reliance-promoters/articleshow/115188207.cms" style="text-decoration: none; color: inherit;" target="_blank">SC dismisses Sebi's appeals against SAT relief for Reliance, promoters</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/sc-dismisses-sebis-appeals-against-sat-relief-for-reliance-promoters/articleshow/115188207.cms" style="text-decoration: none; color: inherit;" target="_blank">SC dismisses Sebi's appeals against SAT relief for Reliance, promoters</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/sc-dismisses-sebis-appeals-against-sat-relief-for-reliance-promoters/articleshow/115188207.cms" style="text-decoration: none; color: inherit;" target="_blank">SC dismisses Sebi's appeals against SAT relief for Reliance, promoters</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/personal-finance/which-overseas-international-mutual-funds-open-for-subscription-currently-12860911.html" style="text-decoration: none; color: inherit;" target="_blank">Which Overseas International Mutual Funds Open For Subscription Currently</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.business-standard.com/india-news/uttar-pradesh-govt-plans-private-textile-parks-to-curb-chinese-imports-124111101761_1.html" style="text-decoration: none; color: inherit;" target="_blank">Uttar Pradesh govt plans private textile parks to curb Chinese imports</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.business-standard.com/india-news/uttar-pradesh-govt-plans-private-textile-parks-to-curb-chinese-imports-124111101761_1.html" style="text-decoration: none; color: inherit;" target="_blank">Uttar Pradesh govt plans private textile parks to curb Chinese imports</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/news/india/rpl-case-sc-dismisses-sebis-appeal-against-mukesh-ambanis-reliance/articleshow/115169735.cms" style="text-decoration: none; color: inherit;" target="_blank">RPL case: SC dismisses SEBI’s appeal against Mukesh Ambani’s Reliance</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.business-standard.com/india-news/uttar-pradesh-govt-plans-private-textile-parks-to-curb-chinese-imports-124111101761_1.html" style="text-decoration: none; color: inherit;" target="_blank">Uttar Pradesh govt plans private textile parks to curb Chinese imports</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/industry/telecom/telecom-news/satcom-has-the-potential-to-connect-the-hitherto-unconnected-communications-minister-jyotiraditya-scindia/articleshow/115190685.cms" style="text-decoration: none; color: inherit;" target="_blank">Satcom has the potential to connect the hitherto unconnected: Communications minister Jyotiraditya Scindia</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/industry/telecom/telecom-news/satcom-has-the-potential-to-connect-the-hitherto-unconnected-communications-minister-jyotiraditya-scindia/articleshow/115190685.cms" style="text-decoration: none; color: inherit;" target="_blank">Satcom has the potential to connect the hitherto unconnected: Communications minister Jyotiraditya Scindia</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/industry/telecom/telecom-news/satcom-has-the-potential-to-connect-the-hitherto-unconnected-communications-minister-jyotiraditya-scindia/articleshow/115190685.cms" style="text-decoration: none; color: inherit;" target="_blank">Satcom has the potential to connect the hitherto unconnected: Communications minister Jyotiraditya Scindia</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/industry/telecom/telecom-news/satcom-has-the-potential-to-connect-the-hitherto-unconnected-communications-minister-jyotiraditya-scindia/articleshow/115190685.cms" style="text-decoration: none; color: inherit;" target="_blank">Satcom has the potential to connect the hitherto unconnected: Communications minister Jyotiraditya Scindia</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.livemint.com/companies/news/supreme-court-sebi-penalty-plea-mukesh-ambani-reliance-industries-ril-rpl-share-manipulation-case-sat-11731313266998.html" style="text-decoration: none; color: inherit;" target="_blank">SC dismisses Sebi's  ₹25 crore penalty plea against Mukesh Ambani in RPL share manipulation case</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.livemint.com/companies/news/supreme-court-sebi-penalty-plea-mukesh-ambani-reliance-industries-ril-rpl-share-manipulation-case-sat-11731313266998.html" style="text-decoration: none; color: inherit;" target="_blank">SC dismisses Sebi's  ₹25 crore penalty plea against Mukesh Ambani in RPL share manipulation case</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.livemint.com/companies/news/supreme-court-sebi-penalty-plea-mukesh-ambani-reliance-industries-ril-rpl-share-manipulation-case-sat-11731313266998.html" style="text-decoration: none; color: inherit;" target="_blank">SC dismisses Sebi's  ₹25 crore penalty plea against Mukesh Ambani in RPL share manipulation case</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.livemint.com/companies/news/supreme-court-sebi-penalty-plea-mukesh-ambani-reliance-industries-ril-rpl-share-manipulation-case-sat-11731313266998.html" style="text-decoration: none; color: inherit;" target="_blank">SC dismisses Sebi's  ₹25 crore penalty plea against Mukesh Ambani in RPL share manipulation case</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.livemint.com/companies/news/supreme-court-sebi-penalty-plea-mukesh-ambani-reliance-industries-ril-rpl-share-manipulation-case-sat-11731313266998.html" style="text-decoration: none; color: inherit;" target="_blank">SC dismisses Sebi's  ₹25 crore penalty plea against Mukesh Ambani in RPL share manipulation case</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/ipo/swiggy-ipo-allotment-status-how-to-check-details-online-via-registrar-bse-12861752.html" style="text-decoration: none; color: inherit;" target="_blank">Swiggy Ipo Allotment Status How To Check Details Online Via Registrar Bse</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-fmcg-stocks-down-as-market-falls/articleshow/114931500.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: FMCG stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-sugar-stocks-down-as-market-falls/articleshow/114931692.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Sugar stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://nsearchives.nseindia.com/corporate/RPTECH_04112024150549_SEintimationearningcalltranscript.pdf" style="text-decoration: none; color: inherit;" target="_blank">"Rashi Peripherals Reports Strong Q2 FY25 Performance and Strategic Expansion Initiatives"</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-fertilisers-stocks-down-as-market-falls/articleshow/114932373.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Fertilisers stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/earnings/q2-results-nifty-companies-show-zero-profit-growth-leading-to-downgrades/articleshow/114932310.cms" style="text-decoration: none; color: inherit;" target="_blank">Q2 results: Nifty companies show zero profit growth leading to downgrades</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/earnings/q2-results-nifty-companies-show-zero-profit-growth-leading-to-downgrades/articleshow/114932310.cms" style="text-decoration: none; color: inherit;" target="_blank">Q2 results: Nifty companies show zero profit growth leading to downgrades</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-fertilisers-stocks-down-as-market-falls/articleshow/114932373.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Fertilisers stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-fertilisers-stocks-down-as-market-falls/articleshow/114932373.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Fertilisers stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/earnings/q2-results-nifty-companies-show-zero-profit-growth-leading-to-downgrades/articleshow/114932310.cms" style="text-decoration: none; color: inherit;" target="_blank">Q2 results: Nifty companies show zero profit growth leading to downgrades</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-fertilisers-stocks-down-as-market-falls/articleshow/114932373.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Fertilisers stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/earnings/q2-results-nifty-companies-show-zero-profit-growth-leading-to-downgrades/articleshow/114932310.cms" style="text-decoration: none; color: inherit;" target="_blank">Q2 results: Nifty companies show zero profit growth leading to downgrades</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-fertilisers-stocks-down-as-market-falls/articleshow/114932373.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Fertilisers stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/reliance-ind-down-4-hits-over-nine-month-low-slips-20-from-52-week-high-124110400224_1.html" style="text-decoration: none; color: inherit;" target="_blank">Reliance Ind down 4%, hits over nine-month low; slips 20% from 52-week high</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/reliance-ind-down-4-hits-over-nine-month-low-slips-20-from-52-week-high-124110400224_1.html" style="text-decoration: none; color: inherit;" target="_blank">Reliance Ind down 4%, hits over nine-month low; slips 20% from 52-week high</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-power-stocks-down-as-market-falls/articleshow/114933490.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Power stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-power-stocks-down-as-market-falls/articleshow/114933490.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Power stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-power-stocks-down-as-market-falls/articleshow/114933490.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Power stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-power-stocks-down-as-market-falls/articleshow/114933490.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Power stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-power-stocks-down-as-market-falls/articleshow/114933490.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Power stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/equity-investors-become-poorer-by-rs-7-37-trillion-as-markets-tumble-124110400257_1.html" style="text-decoration: none; color: inherit;" target="_blank">Equity investors become poorer by Rs 7.37 trillion as markets tumble</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/equity-investors-become-poorer-by-rs-7-37-trillion-as-markets-tumble-124110400257_1.html" style="text-decoration: none; color: inherit;" target="_blank">Equity investors become poorer by Rs 7.37 trillion as markets tumble</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-price-of-bank-of-baroda-as-sensex-drops-1353-57-points/articleshow/114934453.cms" style="text-decoration: none; color: inherit;" target="_blank">Share price of Bank of Baroda  as Sensex  drops  1353.57 points</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-price-of-bank-of-baroda-as-sensex-drops-1353-57-points/articleshow/114934453.cms" style="text-decoration: none; color: inherit;" target="_blank">Share price of Bank of Baroda  as Sensex  drops  1353.57 points</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-price-of-bank-of-baroda-as-sensex-drops-1353-57-points/articleshow/114934453.cms" style="text-decoration: none; color: inherit;" target="_blank">Share price of Bank of Baroda  as Sensex  drops  1353.57 points</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-price-of-bank-of-baroda-as-sensex-drops-1353-57-points/articleshow/114934453.cms" style="text-decoration: none; color: inherit;" target="_blank">Share price of Bank of Baroda  as Sensex  drops  1353.57 points</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/stock-market-news/reliance-share-price-falls-over-4-ytd-return-turns-negative-time-for-bottom-fishing-11730700523495.html" style="text-decoration: none; color: inherit;" target="_blank">Reliance share price falls over 4%, YTD return turns negative; Time for bottom fishing?</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/stock-market-news/reliance-share-price-falls-over-4-ytd-return-turns-negative-time-for-bottom-fishing-11730700523495.html" style="text-decoration: none; color: inherit;" target="_blank">Reliance share price falls over 4%, YTD return turns negative; Time for bottom fishing?</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/stock-market-news/reliance-share-price-falls-over-4-ytd-return-turns-negative-time-for-bottom-fishing-11730700523495.html" style="text-decoration: none; color: inherit;" target="_blank">Reliance share price falls over 4%, YTD return turns negative; Time for bottom fishing?</a>
+                        </span>
+                    </li>
+                
+                    </ul>
+                </div>
+            
+                        
+                        
+                    </div>
+                </div>
+            </div>
+        
+            <div class="rounded-xl border bg-card text-card-foreground avoid-break">
+                <div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">
+                    <div class="font-semibold tracking-tight text-xl flex items-center justify-between"><span class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/LODHA.NS.png?height=30" class="h-6 rounded-sm">Macrotech Developers Limited (LODHA)</span><span class="text-base text-red-600">₹1187.50</span></div>
+                </div>
+                <div class="p-4">
+                    
+                    <div class="space-y-4">
+                        
+                <div>
+                    <h4 class="font-semibold mb-2 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up w-4 h-4 ml-2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>Latest News</h4>
+                    <ul class="space-y-3">
+                       
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/industry/services/property-/-cstruction/macrotech-developers-buys-2-8-acres-in-punes-hinjewadi-from-paranjape-schemes/articleshow/115183459.cms" style="text-decoration: none; color: inherit;" target="_blank">Macrotech Developers buys 2.8 acres in Pune’s Hinjewadi from Paranjape Schemes</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/indus-towers-share-price-today-latest-on-04112024-11730698593663.html" style="text-decoration: none; color: inherit;" target="_blank">Indus Towers Share Price Today on : Indus Towers share are down by -0.51%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/rail-vikas-nigam-share-price-today-latest-on-04112024-11730698461988.html" style="text-decoration: none; color: inherit;" target="_blank">Rail Vikas Nigam Share Price Today on : Rail Vikas Nigam share are down by -3.89%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    </ul>
+                </div>
+            
+                        
+                        
+                    </div>
+                </div>
+            </div>
+        
+            <div class="rounded-xl border bg-card text-card-foreground avoid-break">
+                <div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">
+                    <div class="font-semibold tracking-tight text-xl flex items-center justify-between"><span class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/TATAMOTORS.NS.png?height=30" class="h-6 rounded-sm">Tata Motors Limited (TATAMOTORS)</span><span class="text-base text-red-600">₹804.70</span></div>
+                </div>
+                <div class="p-4">
+                    
+                    <div class="space-y-4">
+                        
+                <div>
+                    <h4 class="font-semibold mb-2 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up w-4 h-4 ml-2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>Latest News</h4>
+                    <ul class="space-y-3">
+                       
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/expert-view/expect-sectoral-rotation-money-to-flow-into-it-bank-stocks-rajat-sharma/articleshow/115105688.cms" style="text-decoration: none; color: inherit;" target="_blank">Expect sectoral rotation, money to flow into IT, bank stocks:  Rajat Sharma</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/markets/live-can-nifty-defend-24000-as-technical-bounce-reverses-tata-motors-in-focus-opening-bell-12862464.html" style="text-decoration: none; color: inherit;" target="_blank">Live Can Nifty Defend 24000 As Technical Bounce Reverses Tata Motors In Focus Opening Bell</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/stocks/buy-j-b-chemicals-and-pharmaceuticals-target-of-rs-2250-prabhudas-lilladher-12863184.html" style="text-decoration: none; color: inherit;" target="_blank">Buy J B Chemicals And Pharmaceuticals Target Of Rs 2250 Prabhudas Lilladher</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/stocks/buy-apollo-hospitals-enterprise-target-of-rs-8000-prabhudas-lilladher-12863194.html" style="text-decoration: none; color: inherit;" target="_blank">Buy Apollo Hospitals Enterprise Target Of Rs 8000 Prabhudas Lilladher</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/markets/technical-view-nifty-needs-to-defend-24000-to-bounce-towards-24500-amid-choppy-trade-12863150.html" style="text-decoration: none; color: inherit;" target="_blank">Technical View Nifty Needs To Defend 24000 To Bounce Towards 24500 Amid Choppy Trade</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/stocks/buy-max-healthcare-institute-target-of-rs-1200-prabhudas-lilladher-12863222.html" style="text-decoration: none; color: inherit;" target="_blank">Buy Max Healthcare Institute Target Of Rs 1200 Prabhudas Lilladher</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/tata-motors-shares-in-focus-after-q2-results-miss-estimates-should-you-stay-invested/articleshow/115161039.cms" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors shares in focus after Q2 results miss estimates. Should you stay invested?</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.livemint.com/market/stock-market-news/tata-motors-share-price-gains-2-post-q2-results-on-better-second-half-fy25-expectations-11731297329237.html" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors share price gains 2% post Q2 results on better second half FY25 expectations</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/moneycontrol-research/a-tough-ride-for-tata-motors-in-q2-fy25-12862477.html" style="text-decoration: none; color: inherit;" target="_blank">A Tough Ride For Tata Motors In Q2 Fy25</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.business-standard.com/companies/results/q2-results-today-hindalco-ongc-britannia-among-321-to-post-earnings-124111100218_1.html" style="text-decoration: none; color: inherit;" target="_blank">Q2 results today: Hindalco, ONGC, Britannia among 321 to post earnings</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/auto-news/rivals-steer-maruti-suzuki-into-safety-race-dzire-bags-five-stars-in-gncap-after-reluctant-uturn-11731324652782.html" style="text-decoration: none; color: inherit;" target="_blank">Rivals drive Maruti Suzuki into safety race: Dzire bags five stars in crash test</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/tata-motors-recovers-5-from-day-s-low-as-analysts-eye-valuation-comfort-124111100258_1.html" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors recovers 5% from day's low as analysts eye valuation comfort</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/expert-view/fiis-wont-be-rushing-back-unless-indian-economy-re-accelerates-soon-arvind-sanger/articleshow/115164381.cms" style="text-decoration: none; color: inherit;" target="_blank">FIIs won’t be rushing back unless Indian economy re-accelerates soon: Arvind Sanger</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/expert-view/mm-emerging-as-leading-auto-pick-amid-positive-tractor-outlook-sandip-sabharwal/articleshow/115164545.cms" style="text-decoration: none; color: inherit;" target="_blank">M&M emerging as leading auto pick amid positive tractor outlook: Sandip Sabharwal</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/stock-market-news/stock-market-today-trade-setup-for-nifty-50-to-q2-results-today-five-stocks-to-buy-or-sell-on-monday-nov-4-11730617324534.html" style="text-decoration: none; color: inherit;" target="_blank">Stock market today: Trade setup for Nifty 50 to Q2 results today; five stocks to buy or sell on Monday — Nov 4</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/market-today-us-elections-fed-policy-decision-q2-results-afcons-listing-124110400053_1.html" style="text-decoration: none; color: inherit;" target="_blank">Market today: US elections, Fed policy decision, Q2 results, Afcons listing</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/stocks-to-watch-nov-4-sun-pharma-dr-reddy-s-zen-tech-afcons-infra-124110400054_1.html" style="text-decoration: none; color: inherit;" target="_blank">Stocks to Watch, Nov 4: Sun Pharma, Dr Reddy's, Zen Tech, Afcons Infra</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/industry/renewables/govt-takes-second-shot-at-hardselling-ev-policy/articleshow/115150266.cms" style="text-decoration: none; color: inherit;" target="_blank">Govt takes second shot at hardselling EV policy</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/nifty-weak-but-sharp-fall-unlikely-technical-analysts/articleshow/115157034.cms" style="text-decoration: none; color: inherit;" target="_blank">Nifty weak, but sharp fall unlikely: Technical Analysts</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.livemint.com/market/mark-to-market/tata-motors-jlr-jaguar-land-rover-q2-sales-volume-ice-cars-commercial-vehicles-ebitda-ebit-11731316830546.html" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors: Road ahead smoother after speed bumps in Q2?</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.livemint.com/market/mark-to-market/tata-motors-jlr-jaguar-land-rover-q2-sales-volume-ice-cars-commercial-vehicles-ebitda-ebit-11731316830546.html" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors: Road ahead smoother after speed bumps in Q2?</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.livemint.com/market/mark-to-market/tata-motors-jlr-jaguar-land-rover-q2-sales-volume-ice-cars-commercial-vehicles-ebitda-ebit-11731316830546.html" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors: Road ahead smoother after speed bumps in Q2?</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.livemint.com/market/mark-to-market/tata-motors-jlr-jaguar-land-rover-q2-sales-volume-ice-cars-commercial-vehicles-ebitda-ebit-11731316830546.html" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors: Road ahead smoother after speed bumps in Q2?</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/mark-to-market/tata-motors-jlr-jaguar-land-rover-q2-sales-volume-ice-cars-commercial-vehicles-ebitda-ebit-11731316830546.html" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors: Road ahead smoother after speed bumps in Q2?</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/stocks/hold-tata-motors-target-of-rs-847-prabhudas-lilladher-12863093.html" style="text-decoration: none; color: inherit;" target="_blank">Hold Tata Motors Target Of Rs 847 Prabhudas Lilladher</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/stocks/hold-tata-motors-target-of-rs-847-prabhudas-lilladher-12863093.html" style="text-decoration: none; color: inherit;" target="_blank">Hold Tata Motors Target Of Rs 847 Prabhudas Lilladher</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/stocks/hold-tata-motors-target-of-rs-847-prabhudas-lilladher-12863093.html" style="text-decoration: none; color: inherit;" target="_blank">Hold Tata Motors Target Of Rs 847 Prabhudas Lilladher</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/stocks/hold-tata-motors-target-of-rs-847-prabhudas-lilladher-12863093.html" style="text-decoration: none; color: inherit;" target="_blank">Hold Tata Motors Target Of Rs 847 Prabhudas Lilladher</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://nsearchives.nseindia.com/corporate/TATAMOTORS_04112024130329_NSEBSELETTER.pdf" style="text-decoration: none; color: inherit;" target="_blank">"Tata Motors Limited Announces Loss of Share Certificates: Implications for Shareholders"</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/siemens-share-price-0-69-per-cent/articleshow/114931909.cms" style="text-decoration: none; color: inherit;" target="_blank">Siemens share price  0.69 per cent</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/tata-motors-shares-fall-2-as-october-sales-remain-flat-yoy/articleshow/114932233.cms" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors shares fall 2% as October sales remain flat YoY</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/tata-motors-shares-fall-2-as-october-sales-remain-flat-yoy/articleshow/114932233.cms" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors shares fall 2% as October sales remain flat YoY</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/tata-motors-shares-fall-2-as-october-sales-remain-flat-yoy/articleshow/114932233.cms" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors shares fall 2% as October sales remain flat YoY</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/news/tata-motors-shares-fall-2-as-october-sales-remain-flat-yoy/articleshow/114932233.cms" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors shares fall 2% as October sales remain flat YoY</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/tata-motors-share-price-today-latest-on-04112024-11730699114989.html" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors Share Price Today on : Tata Motors share are down by -2.77%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/equity-investors-become-poorer-by-rs-7-37-trillion-as-markets-tumble-124110400257_1.html" style="text-decoration: none; color: inherit;" target="_blank">Equity investors become poorer by Rs 7.37 trillion as markets tumble</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/equity-investors-become-poorer-by-rs-7-37-trillion-as-markets-tumble-124110400257_1.html" style="text-decoration: none; color: inherit;" target="_blank">Equity investors become poorer by Rs 7.37 trillion as markets tumble</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/srf-shares-0-4-as-nifty-drops/articleshow/114934257.cms" style="text-decoration: none; color: inherit;" target="_blank">SRF shares  0.4% as Nifty  drops </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/srf-shares-0-4-as-nifty-drops/articleshow/114934257.cms" style="text-decoration: none; color: inherit;" target="_blank">SRF shares  0.4% as Nifty  drops </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/srf-shares-0-4-as-nifty-drops/articleshow/114934257.cms" style="text-decoration: none; color: inherit;" target="_blank">SRF shares  0.4% as Nifty  drops </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/srf-shares-0-4-as-nifty-drops/articleshow/114934257.cms" style="text-decoration: none; color: inherit;" target="_blank">SRF shares  0.4% as Nifty  drops </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-price-of-bank-of-baroda-as-sensex-drops-1353-57-points/articleshow/114934453.cms" style="text-decoration: none; color: inherit;" target="_blank">Share price of Bank of Baroda  as Sensex  drops  1353.57 points</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-price-of-bank-of-baroda-as-sensex-drops-1353-57-points/articleshow/114934453.cms" style="text-decoration: none; color: inherit;" target="_blank">Share price of Bank of Baroda  as Sensex  drops  1353.57 points</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/srf-shares-0-4-as-nifty-drops/articleshow/114934257.cms" style="text-decoration: none; color: inherit;" target="_blank">SRF shares  0.4% as Nifty  drops </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-price-of-bank-of-baroda-as-sensex-drops-1353-57-points/articleshow/114934453.cms" style="text-decoration: none; color: inherit;" target="_blank">Share price of Bank of Baroda  as Sensex  drops  1353.57 points</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-price-of-bank-of-baroda-as-sensex-drops-1353-57-points/articleshow/114934453.cms" style="text-decoration: none; color: inherit;" target="_blank">Share price of Bank of Baroda  as Sensex  drops  1353.57 points</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/blood-on-d-street-why-nifty-dropped-below-24-000-sensex-fell-1-500-pts-124110400320_1.html" style="text-decoration: none; color: inherit;" target="_blank">Blood on D Street: Why Nifty dropped below 24,000, Sensex fell 1,500 pts?</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/markets/brokerage-radar-jpmorgan-downgrades-asian-paints-to-underweight-kotak-upgrades-ashok-leyland-to-add-12862441.html" style="text-decoration: none; color: inherit;" target="_blank">Brokerage Radar Jpmorgan Downgrades Asian Paints To Underweight Kotak Upgrades Ashok Leyland To Add</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/earnings/tata-motors-q2-brokerages-stay-bullish-but-trim-price-targets-12862437.html" style="text-decoration: none; color: inherit;" target="_blank">Tata Motors Q2 Brokerages Stay Bullish But Trim Price Targets</a>
+                        </span>
+                    </li>
+                
+                    </ul>
+                </div>
+            
+                        
+                        
+                    </div>
+                </div>
+            </div>
+        
+            <div class="rounded-xl border bg-card text-card-foreground avoid-break">
+                <div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">
+                    <div class="font-semibold tracking-tight text-xl flex items-center justify-between"><span class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/ADANIPOWER.NS.png?height=30" class="h-6 rounded-sm">Adani Power Limited (ADANIPOWER)</span><span class="text-base text-red-600">₹578.95</span></div>
+                </div>
+                <div class="p-4">
+                    
+                    <div class="space-y-4">
+                        
+                <div>
+                    <h4 class="font-semibold mb-2 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up w-4 h-4 ml-2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>Latest News</h4>
+                    <ul class="space-y-3">
+                       
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/companies/results/beml-q2-result-profit-falls-slightly-by-1-9-to-rs-51-cr-as-demand-weakens-124111100709_1.html" style="text-decoration: none; color: inherit;" target="_blank">BEML Q2 result: Profit falls slightly by 1.9% to Rs 51 cr as demand weakens</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/companies/results/beml-q2-result-profit-falls-slightly-by-1-9-to-rs-51-cr-as-demand-weakens-124111100709_1.html" style="text-decoration: none; color: inherit;" target="_blank">BEML Q2 result: Profit falls slightly by 1.9% to Rs 51 cr as demand weakens</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/companies/results/beml-q2-result-profit-falls-slightly-by-1-9-to-rs-51-cr-as-demand-weakens-124111100709_1.html" style="text-decoration: none; color: inherit;" target="_blank">BEML Q2 result: Profit falls slightly by 1.9% to Rs 51 cr as demand weakens</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/companies/results/beml-q2-result-profit-falls-slightly-by-1-9-to-rs-51-cr-as-demand-weakens-124111100709_1.html" style="text-decoration: none; color: inherit;" target="_blank">BEML Q2 result: Profit falls slightly by 1.9% to Rs 51 cr as demand weakens</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/equity-investors-become-poorer-by-rs-7-37-trillion-as-markets-tumble-124110400257_1.html" style="text-decoration: none; color: inherit;" target="_blank">Equity investors become poorer by Rs 7.37 trillion as markets tumble</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/equity-investors-become-poorer-by-rs-7-37-trillion-as-markets-tumble-124110400257_1.html" style="text-decoration: none; color: inherit;" target="_blank">Equity investors become poorer by Rs 7.37 trillion as markets tumble</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/jsw-energy-share-price-today-latest-on-04112024-11730699628707.html" style="text-decoration: none; color: inherit;" target="_blank">JSW Energy Share Price Today on : JSW Energy share are down by -1.03%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/adani-green-energy-share-price-today-latest-on-04112024-11730699883500.html" style="text-decoration: none; color: inherit;" target="_blank">Adani Green Energy Share Price Today on : Adani Green Energy share are down by -0.68%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    </ul>
+                </div>
+            
+                        
+                        
+                    </div>
+                </div>
+            </div>
+        
+            <div class="rounded-xl border bg-card text-card-foreground avoid-break">
+                <div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">
+                    <div class="font-semibold tracking-tight text-xl flex items-center justify-between"><span class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/JIOFIN.NS.png?height=30" class="h-6 rounded-sm">Jio Financial Services Limited (JIOFIN)</span><span class="text-base text-red-600">₹312.00</span></div>
+                </div>
+                <div class="p-4">
+                    
+                    <div class="space-y-4">
+                        
+                <div>
+                    <h4 class="font-semibold mb-2 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up w-4 h-4 ml-2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>Latest News</h4>
+                    <ul class="space-y-3">
+                       
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/ecos-india-mobility-share-price-today-latest-on-04112024-11730698596971.html" style="text-decoration: none; color: inherit;" target="_blank">Ecos India Mobility Share Price Today on : Ecos India Mobility share are down by -4.02%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/garuda-construction-and-engineer-share-price-today-latest-on-04112024-11730698595465.html" style="text-decoration: none; color: inherit;" target="_blank">Garuda Construction And Engineer Share Price Today on : Garuda Construction And Engineer share are down by -2.7%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/kross-share-price-today-latest-on-04112024-11730699113237.html" style="text-decoration: none; color: inherit;" target="_blank">Kross Share Price Today on : Kross share are down by -2.09%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/hyundai-motor-india-share-price-today-latest-on-04112024-11730699111099.html" style="text-decoration: none; color: inherit;" target="_blank">Hyundai Motor India Share Price Today on : Hyundai Motor India share are down by -1.76%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    </ul>
+                </div>
+            
+                        
+                        
+                    </div>
+                </div>
+            </div>
+        
+            <div class="rounded-xl border bg-card text-card-foreground avoid-break">
+                <div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">
+                    <div class="font-semibold tracking-tight text-xl flex items-center justify-between"><span class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/IRCON.NS.png?height=30" class="h-6 rounded-sm">Ircon International Limited (IRCON)</span><span class="text-base text-red-600">₹200.49</span></div>
+                </div>
+                <div class="p-4">
+                    
+                    <div class="space-y-4">
+                        
+                <div>
+                    <h4 class="font-semibold mb-2 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up w-4 h-4 ml-2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>Latest News</h4>
+                    <ul class="space-y-3">
+                       
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/market-today-us-elections-fed-policy-decision-q2-results-afcons-listing-124110400053_1.html" style="text-decoration: none; color: inherit;" target="_blank">Market today: US elections, Fed policy decision, Q2 results, Afcons listing</a>
+                        </span>
+                    </li>
+                
+                    </ul>
+                </div>
+            
+                        
+                        
+                    </div>
+                </div>
+            </div>
+        
+            <div class="rounded-xl border bg-card text-card-foreground avoid-break">
+                <div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">
+                    <div class="font-semibold tracking-tight text-xl flex items-center justify-between"><span class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/NTPC.NS.png?height=30" class="h-6 rounded-sm">NTPC Limited (NTPC)</span><span class="text-base text-red-600">₹392.55</span></div>
+                </div>
+                <div class="p-4">
+                    
+                    <div class="space-y-4">
+                        
+                <div>
+                    <h4 class="font-semibold mb-2 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up w-4 h-4 ml-2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>Latest News</h4>
+                    <ul class="space-y-3">
+                       
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-fmcg-stocks-down-as-market-falls/articleshow/114931500.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: FMCG stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-sugar-stocks-down-as-market-falls/articleshow/114931692.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Sugar stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-fertilisers-stocks-down-as-market-falls/articleshow/114932373.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Fertilisers stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-fertilisers-stocks-down-as-market-falls/articleshow/114932373.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Fertilisers stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-stocks-that-hit-52-week-lows-on-nse/articleshow/114933017.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Stocks that hit 52-week lows on NSE</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-fertilisers-stocks-down-as-market-falls/articleshow/114932373.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Fertilisers stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-fertilisers-stocks-down-as-market-falls/articleshow/114932373.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Fertilisers stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-fertilisers-stocks-down-as-market-falls/articleshow/114932373.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Fertilisers stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-stocks-that-hit-52-week-lows-on-nse/articleshow/114933017.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Stocks that hit 52-week lows on NSE</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-stocks-that-hit-52-week-lows-on-nse/articleshow/114933017.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Stocks that hit 52-week lows on NSE</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-power-stocks-down-as-market-falls/articleshow/114933490.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Power stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-stocks-that-hit-52-week-lows-on-nse/articleshow/114933017.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Stocks that hit 52-week lows on NSE</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-stocks-that-hit-52-week-lows-on-nse/articleshow/114933017.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Stocks that hit 52-week lows on NSE</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-power-stocks-down-as-market-falls/articleshow/114933490.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Power stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-power-stocks-down-as-market-falls/articleshow/114933490.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Power stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-power-stocks-down-as-market-falls/articleshow/114933490.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Power stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/stock-market-update-power-stocks-down-as-market-falls/articleshow/114933490.cms" style="text-decoration: none; color: inherit;" target="_blank">Stock market update: Power stocks  down  as market  falls </a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/equity-investors-become-poorer-by-rs-7-37-trillion-as-markets-tumble-124110400257_1.html" style="text-decoration: none; color: inherit;" target="_blank">Equity investors become poorer by Rs 7.37 trillion as markets tumble</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/equity-investors-become-poorer-by-rs-7-37-trillion-as-markets-tumble-124110400257_1.html" style="text-decoration: none; color: inherit;" target="_blank">Equity investors become poorer by Rs 7.37 trillion as markets tumble</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/adani-green-energy-share-price-today-latest-on-04112024-11730699883500.html" style="text-decoration: none; color: inherit;" target="_blank">Adani Green Energy Share Price Today on : Adani Green Energy share are down by -0.68%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/news/blood-on-d-street-why-nifty-dropped-below-24-000-sensex-fell-1-500-pts-124110400320_1.html" style="text-decoration: none; color: inherit;" target="_blank">Blood on D Street: Why Nifty dropped below 24,000, Sensex fell 1,500 pts?</a>
+                        </span>
+                    </li>
+                
+                    </ul>
+                </div>
+            
+                        
+                        
+                    </div>
+                </div>
+            </div>
+        
+            <div class="rounded-xl border bg-card text-card-foreground avoid-break">
+                <div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">
+                    <div class="font-semibold tracking-tight text-xl flex items-center justify-between"><span class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/ONGC.NS.png?height=30" class="h-6 rounded-sm">Oil & Natural Gas Corporation Limited (ONGC)</span><span class="text-base text-red-600">₹256.90</span></div>
+                </div>
+                <div class="p-4">
+                    
+                    <div class="space-y-4">
+                        
+                <div>
+                    <h4 class="font-semibold mb-2 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up w-4 h-4 ml-2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>Latest News</h4>
+                    <ul class="space-y-3">
+                       
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/earnings/q2-results-2024-live-news-updates-ongc-hindalco-britannia-bank-of-india-shree-cements-nmdc-jubliant-november-11-liveblog-12862527.html" style="text-decoration: none; color: inherit;" target="_blank">Q2 Results 2024 Live News Updates Ongc Hindalco Britannia Bank Of India Shree Cements Nmdc Jubliant November 11 Liveblog</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/earnings/ongc-q2-results-standalone-net-profit-rises-17-yoy-to-rs-11984-crore-rs-6-per-share-dividend-declared/articleshow/115183593.cms" style="text-decoration: none; color: inherit;" target="_blank">ONGC Q2 Results: Standalone net profit rises 17% YoY to Rs 11,984 crore; dividend of Rs 6 per share declared</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/earnings/ongc-q2-net-profit-rises-17-to-rs-11984-crore-firm-declares-rs-6-interim-dividend-12863315.html" style="text-decoration: none; color: inherit;" target="_blank">Ongc Q2 Net Profit Rises 17 To Rs 11984 Crore Firm Declares Rs 6 Interim Dividend</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/companies/results/q2-results-today-hindalco-ongc-britannia-among-321-to-post-earnings-124111100218_1.html" style="text-decoration: none; color: inherit;" target="_blank">Q2 results today: Hindalco, ONGC, Britannia among 321 to post earnings</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.livemint.com/companies/company-results/ongc-q2-results-net-profit-falls-25-yoy-to-rs-10-272-5-crore-interim-dividend-of-rs-6-per-share-declared-11731331969558.html" style="text-decoration: none; color: inherit;" target="_blank">ONGC Q2 Results: Net profit falls 25% YoY to  ₹10,272.5 crore; interim dividend of  ₹6 per share declared</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.moneycontrol.com/news/business/markets/macroeconomic-data-q2-earnings-fiis-trading-activity-to-guide-markets-this-week-analysts-12862190.html" style="text-decoration: none; color: inherit;" target="_blank">Macroeconomic Data Q2 Earnings Fiis Trading Activity To Guide Markets This Week Analysts</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.business-standard.com/companies/results/ongc-q2-results-net-profit-up-17-at-rs-11-948-cr-on-lower-windfall-tax-124111101465_1.html" style="text-decoration: none; color: inherit;" target="_blank">ONGC Q2 results: Net profit up 17% at Rs 11,948 cr on lower windfall tax</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.business-standard.com/markets/ipo/macroeconomic-data-q2-earnings-to-guide-markets-this-week-analysts-124111000121_1.html" style="text-decoration: none; color: inherit;" target="_blank">Macroeconomic data, Q2 earnings to guide markets this week: Analysts</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.business-standard.com/finance/news/net-direct-tax-collection-rises-15-4-to-rs-12-1-trn-in-april-nov-124111101552_1.html" style="text-decoration: none; color: inherit;" target="_blank">Net direct tax collection rises 15.4% to Rs 12.1 trn in April-Nov</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/earnings/ongc-q2-results-profit-up-17-to-rs-11984-crore-on-lower-levies/articleshow/115186505.cms" style="text-decoration: none; color: inherit;" target="_blank">ONGC Q2 Results: Profit up 17% to Rs 11,984 crore on lower levies</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-100 text-green-700 hover:bg-green-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide green lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                        </div><span class="text-green-700 text-left">
+                        <a href="https://www.livemint.com/companies/company-results/q2-results-ongc-hyundai-motor-glenmark-pharma-grasim-industries-among-companies-to-declare-earnings-next-week-11731224671476.html" style="text-decoration: none; color: inherit;" target="_blank">Q2 results: ONGC, Hyundai Motor, Glenmark Pharma, Grasim Industries among companies to declare earnings next week</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/news/india/top-events-on-november-11-rg-kar-murder-case-trial-new-maruti-dzire-launch-swiggy-ipo-ongc-q2-results-and-more-11731286736959.html" style="text-decoration: none; color: inherit;" target="_blank">Top events on November 11: RG Kar murder case trial, new Maruti Dzire launch, Swiggy IPO, ONGC Q2 Results and more</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/stock-market-news/q2-results-today-ongc-hindalco-britannia-shree-cements-bank-of-india-ramco-upl-blue-dart-more-earning-november-11-market-11731292827280.html" style="text-decoration: none; color: inherit;" target="_blank">Q2 results today: ONGC, Hindalco, Britannia, Shree Cements, Bank of India, NMDC, Ramco Cements, UPL, Blue Dart and more</a>
+                        </span>
+                    </li>
+                
+                    </ul>
+                </div>
+            
+                        
+                        
+                    </div>
+                </div>
+            </div>
+        
+            <div class="rounded-xl border bg-card text-card-foreground avoid-break">
+                <div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">
+                    <div class="font-semibold tracking-tight text-xl flex items-center justify-between"><span class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/IRFC.NS.png?height=30" class="h-6 rounded-sm">Indian Railway Finance Corporation Limited (IRFC)</span><span class="text-base text-red-600">₹147.40</span></div>
+                </div>
+                <div class="p-4">
+                    
+                    <div class="space-y-4">
+                        
+                <div>
+                    <h4 class="font-semibold mb-2 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up w-4 h-4 ml-2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>Latest News</h4>
+                    <ul class="space-y-3">
+                       
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-red-100 text-red-700 hover:bg-red-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide red lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                        </div><span class="text-red-700 text-left">
+                        <a href="https://www.livemint.com/market/stock-market-news/irfc-share-price-dips-ahead-of-dividend-record-date-opportunity-to-buy-11731299227045.html" style="text-decoration: none; color: inherit;" target="_blank">IRFC share price dips ahead of dividend record date. Opportunity to buy?</a>
+                        </span>
+                    </li>
+                
+                    </ul>
+                </div>
+            
+                        
+                        
+                    </div>
+                </div>
+            </div>
+        
+            <div class="rounded-xl border bg-card text-card-foreground avoid-break">
+                <div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">
+                    <div class="font-semibold tracking-tight text-xl flex items-center justify-between"><span class="flex items-center gap-2"><img src="https://financialmodelingprep.com/image-stock/ZOMATO.NS.png?height=30" class="h-6 rounded-sm">Zomato Limited (ZOMATO)</span><span class="text-base text-green-600">₹258.62</span></div>
+                </div>
+                <div class="p-4">
+                    
+                    <div class="space-y-4">
+                        
+                <div>
+                    <h4 class="font-semibold mb-2 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up w-4 h-4 ml-2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>Latest News</h4>
+                    <ul class="space-y-3">
+                       
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/stock-market-news/stock-market-today-trade-setup-for-nifty-50-to-q2-results-today-five-stocks-to-buy-or-sell-on-monday-nov-4-11730617324534.html" style="text-decoration: none; color: inherit;" target="_blank">Stock market today: Trade setup for Nifty 50 to Q2 results today; five stocks to buy or sell on Monday — Nov 4</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://economictimes.indiatimes.com/markets/stocks/stock-watch/share-market-update-most-active-stocks-of-the-day-in-terms-of-total-traded-value/articleshow/114932224.cms" style="text-decoration: none; color: inherit;" target="_blank">Share market update: Most active stocks of the day in terms of total traded value</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/zomato-share-price-today-latest-on-04112024-11730699885279.html" style="text-decoration: none; color: inherit;" target="_blank">Zomato Share Price Today on : Zomato share are down by -2.77%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    <li class="flex items-start gap-2 text-left">
+                        <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200 mt-1 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </div><span class="text-gray-700 text-left">
+                        <a href="https://www.livemint.com/market/wipro-share-price-today-latest-on-04112024-11730699887101.html" style="text-decoration: none; color: inherit;" target="_blank">Wipro Share Price Today on : Wipro share are down by -2.26%, Nifty down by -1.57%</a>
+                        </span>
+                    </li>
+                
+                    </ul>
+                </div>
+            
+                        
+                        
+                    </div>
+                </div>
+            </div>
+        
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+// Replace all matches with empty string
+const htmlSafe = html.replace(regex, '');
+
+// Execute the conversion
+convertHtmlToPdf(htmlSafe, 'output.pdf')
+  .catch(err => console.error('Conversion failed:', err));
