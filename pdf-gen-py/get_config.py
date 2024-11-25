@@ -104,63 +104,25 @@ def get_financial_config(email_id: str, broker_id: int, supabase_url: str, supab
     
     broker_name = broker_query.data['name']
     
-    # Create header
-    header: Header = {
-        "title": "Weekly Financial Update",
-        "date": f"Week ended {week_ending}",
-        "logo": """
-<svg id="Layer_29" data-name="Layer 29" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 595.28 595.28" width="70" height="70">
-  <defs>
-    <style>
-      .cls-1 {
-        filter: url(#drop-shadow-2);
-      }
-
-      .cls-1, .cls-2 {
-        fill: none;
-        stroke: #fff;
-        stroke-linejoin: round;
-        stroke-width: 15px;
-      }
-
-      .cls-2 {
-        filter: url(#drop-shadow-1);
-      }
-    </style>
-    <filter id="drop-shadow-1" filterUnits="userSpaceOnUse">
-      <feOffset dx="7" dy="7"/>
-      <feGaussianBlur result="blur" stdDeviation="2.83"/>
-      <feFlood flood-color="#000" flood-opacity=".75"/>
-      <feComposite in2="blur" operator="in"/>
-      <feComposite in="SourceGraphic"/>
-    </filter>
-    <filter id="drop-shadow-2" filterUnits="userSpaceOnUse">
-      <feOffset dx="7" dy="7"/>
-      <feGaussianBlur result="blur-2" stdDeviation="5"/>
-      <feFlood flood-color="#000" flood-opacity=".75"/>
-      <feComposite in2="blur-2" operator="in"/>
-      <feComposite in="SourceGraphic"/>
-    </filter>
-  </defs>
-  <rect y=".04" width="595.28" height="595.28"/>
-  <g>
-    <polyline class="cls-2" points="285.03 177.91 285.03 142.21 136.59 142.21 136.59 285.02 433.46 285.02 433.45 427.83 285.03 427.83 285.03 249.32"/>
-    <line class="cls-1" x1="458.68" y1="453.07" x2="433.45" y2="427.83"/>
-  </g>
-</svg>""",
-        "brokerName": broker_name
-    }
-    
     # Get client's companies through table
     # Get Client data
     companies_query = supabase.table('clients') \
-        .select('id') \
+        .select('id, name') \
         .eq('email', email_id) \
         .single() \
         .execute()
         
     if not companies_query.data:
         raise ValueError(f"Client not found for email {email_id}")
+    
+
+    # Create header
+    header: Header = {
+        "title": f"{companies_query.data['name']}'s Weekly Portfolio Update",
+        "date": f"Week ended {week_ending}",
+        "logo": """https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTMQ1smT0Jr19WHt2eec_ezeODfuoT9BRTlGA&s""",
+        "brokerName": broker_name
+    }
     
     # Left join client_companies table with companies table
     companies_query = supabase.table('client_companies') \
@@ -272,7 +234,7 @@ def get_financial_config(email_id: str, broker_id: int, supabase_url: str, supab
                 for metric in selected_metrics:
                     metric_key = metric.replace(" ", "_").replace("/", "_")
                     if metric_key in metrics_data:
-                        key_metrics[metric_key] = metrics_data[metric_key] if metrics_data[metric_key] is not None and not np.isnan(metrics_data[metric_key]) else 'N/A'
+                        key_metrics[metric] = metrics_data[metric_key] if metrics_data[metric_key] is not None and not np.isnan(metrics_data[metric_key]) else 'N/A'
                 
                 # Get insights for the company
                 insights_query = supabase.table('weekly_report_insights') \

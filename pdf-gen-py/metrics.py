@@ -318,8 +318,8 @@ def get_stock_metrics(ticker_symbol):
 
             # Price and Moving Averages
             "Current_Price": round(current_price, 2),
-            "DMA_200": round(dma_200, 2),
-            "DMA_50": round(dma_50, 2),
+            "200_DMA": round(dma_200, 2),
+            "50_DMA": round(dma_50, 2),
             "Price_to_200DMA": round((current_price/dma_200 - 1) * 100, 2),  # % above/below 200 DMA
             "Price_to_50DMA": round((current_price/dma_50 - 1) * 100, 2),    # % above/below 50 DMA
 

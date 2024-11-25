@@ -232,8 +232,8 @@ class Config(TypedDict):
 
 def generate_html(config: Config) -> str:  
     header_html = f"""  
-        <header class="bg-primary text-primary-foreground p-6 rounded-t-2xl mb-8 avoid-break">  
-          <div class="flex items-center gap-4">{config['header']['logo']}  
+        <header class="text-primary-foreground p-6 rounded-t-2xl mb-8 avoid-break" style="background-color: #0b4177;">  
+          <div class="flex items-center gap-4"><img src={config['header']['logo']} class="h-12 rounded-sm">  
             <div>  
               <h1 class="text-3xl font-bold">{config['header']['title']}</h1>  
               <p class="text-sm opacity-90 text-left">{config['header']['date']}</p>  
@@ -310,8 +310,8 @@ def generate_html(config: Config) -> str:
         key_metrics_html = ""  
         if 'keyMetrics' in company:  
             key_metrics_html = f"""  
-                <div class="flex flex-wrap gap-4 mb-4 p-3 rounded-lg justify-center avoid-break key-metric">  
-                    {' '.join([f'<div class="flex flex-col flex-1 gap-2 p-2 bg-secondary rounded-md"><p class="text-sm text-muted-foreground">{k.replace("_", " ")}</p><p class="font-semibold">{v}</p></div>' for k, v in company['keyMetrics'].items()])}  
+                <div class="grid grid-cols-{len(company['keyMetrics'])} gap-4 mb-4 p-3 rounded-lg justify-center avoid-break key-metric">  
+                    {' '.join([f'<div class="flex flex-col justify-center flex-1 gap-2 p-2 bg-secondary rounded-md"><p class="text-sm text-muted-foreground">{k.replace("_", " ")}</p><p class="font-semibold">{v}</p></div>' for k, v in company['keyMetrics'].items()])}  
                 </div>  
             """  
 
@@ -464,7 +464,7 @@ def generate_html(config: Config) -> str:
     <div class="min-h-screen bg-background p-4 w-screen">  
       <div class="max-w-7xl mx-auto">  
         <div class="bg-white w-full relative">  
-          <div class="p-4 pb-4">  
+          <div class="px-4">  
             {header_html}  
             <section class="mb-8 avoid-break">  
               <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Market Overview</h2>  
