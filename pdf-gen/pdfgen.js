@@ -79,20 +79,33 @@
  */
 import fs from 'fs';
 import dotenv from 'dotenv';
-import getFinancialConfig from './get_config.js';
+import getFinancialConfig from './get_config_cqnow.js';
 
 dotenv.config();
 const generateHtml = (config) => {
-  const headerHtml = `
+  let headerHtml = `
       <header class="text-primary-foreground p-6 rounded-t-2xl mb-8 avoid-break" style="background-color: #0b4177;">
-          <div class="flex items-center gap-4"><img src=${config.header.logo} class="h-12 rounded-sm">
+          <div class="flex items-center gap-4">${config.header.logo}
               <div>
-                  <h1 class="text-3xl font-bold">${config.header.title}</h1>
+                  <h1 class="text-3xl font-bold text-left">${config.header.title}</h1>
                   <p class="text-sm opacity-90 text-left">${config.header.date}</p>
               </div>
           </div>
       </header>
   `;
+
+  if (config.header.logo.startsWith('http')) {
+      headerHtml = `
+        <header class="text-primary-foreground p-6 rounded-t-2xl mb-8 avoid-break" style="background-color: #0b4177;">
+            <div class="flex items-center gap-4"><img src=${config.header.logo} class="h-12 rounded-sm">
+                <div>
+                    <h1 class="text-3xl font-bold text-left">${config.header.title}</h1>
+                    <p class="text-sm opacity-90 text-left">${config.header.date}</p>
+                </div>
+            </div>
+        </header>
+      `;
+  }
 
   const marketOverviewRows = config.companies.map(company => {
       const weeklyChangeIcon = company.weeklyChange.includes('+') 
@@ -287,7 +300,7 @@ const generateHtml = (config) => {
               <div class="rounded-xl border bg-card text-card-foreground avoid-break">
 <div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2 font-semibold text-xl">
+                            <div class="flex items-center gap-2 font-semibold text-xl text-left">
                                 <img src="${company.icon}" class="h-6 rounded-sm">${company.name} (${company.symbol})
                             </div>
                             <div>
@@ -366,19 +379,20 @@ const generateHtml = (config) => {
     `.trim();
 };
 
-// Example usage:
 
-
-async function generateCleanedHtml(emailId, brokerId) {
+async function generateCleanedHtml(userId, brokerId, brokerLogo) {
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
-    const config = await getFinancialConfig(emailId, brokerId, SUPABASE_URL, SUPABASE_KEY);
+    const config = await getFinancialConfig(userId, brokerId, brokerLogo, SUPABASE_URL, SUPABASE_KEY);
     const htmlOutput = generateHtml(config);
 
     // Remove any backtick content
     const cleanedHtml = htmlOutput.replace(/`.*?`/g, '');
-    return cleanedHtml;
+    return {
+        html: cleanedHtml,
+        brokerName: config.header.brokerName
+    }
 }
 
 export default generateCleanedHtml;

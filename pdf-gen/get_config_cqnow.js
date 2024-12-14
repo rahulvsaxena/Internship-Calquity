@@ -84,6 +84,7 @@ import {
   isMacdBearishCrossover
 } from './metrics.js';
 import dotenv from 'dotenv';
+import { createClerkClient } from '@clerk/backend';
 
 dotenv.config();
 
@@ -94,9 +95,10 @@ dotenv.config();
  * @param {string} supabaseKey
  * @returns {Promise<Config>}
  */
-async function getFinancialConfig(emailId, brokerId, brokerLogo, supabaseUrl, supabaseKey) {
+async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, supabaseKey) {
   // Initialize Supabase client
   const supabase = createClient(supabaseUrl, supabaseKey);
+  const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
   
   // Get current date and format week ending date
   const currentDate = new Date();
@@ -141,19 +143,25 @@ async function getFinancialConfig(emailId, brokerId, brokerLogo, supabaseUrl, su
   const brokerName = brokerData.name;
   
   // Get client data
-  const { data: clientData, error: clientError } = await supabase
-    .from('clients')
-    .select('id, name')
-    .eq('email', emailId)
-    .single();
+  // const { data: clientData, error: clientError } = await supabase
+  //   .from('clients')
+  //   .select('id, name')
+  //   .eq('email', emailId)
+  //   .single();
   
-  if (clientError || !clientData) {
-    throw new Error(`Client not found for email ${emailId}`);
-  }
+  // if (clientError || !clientData) {
+  //   throw new Error(`Client not found for email ${emailId}`);
+  // }
+
+  const user = await clerkClient.users.getUser(userId);
+  const clientData = {
+    name: user.fullName || user.firstName || user.lastName,
+    email: user.emailAddresses[0].emailAddress
+  };
   
   // Create header
   const header = {
-    title: `${clientData.name}'s Weekly Portfolio Update`,
+    title: clientData.name ? `${clientData.name}'s Weekly Portfolio Update` : 'Weekly Portfolio Update',
     date: `Week ended ${weekEndingStr}`,
     logo: `${brokerLogo}`,
     brokerName
@@ -161,9 +169,14 @@ async function getFinancialConfig(emailId, brokerId, brokerLogo, supabaseUrl, su
   
   // Get companies data
   const { data: companiesData } = await supabase
-    .from('client_companies')
+    .from('stocks')
     .select('*, companies(*)')
-    .eq('client_id', clientData.id);
+    .eq('user_id', userId);
+
+  const { data: userPreferences } = await supabase
+    .from('notification_preferences')
+    .select('*')
+    .eq('user_id', userId);
   
   const companies = await Promise.all(companiesData.map(async (clientCompany) => {
     const companyInfo = clientCompany.companies;
@@ -180,6 +193,28 @@ async function getFinancialConfig(emailId, brokerId, brokerLogo, supabaseUrl, su
       articles = articles.filter(article => 
         selectedCategories.includes(article.article_type)
       );
+    }
+
+    if (userPreferences.data?.length > 0) {
+      if (!userPreferences.data[0].news_updates) {
+        articles = articles.filter(article =>
+          !article.link.includes('economictimes.indiatimes.com') &&
+          !article.link.includes('livemint.com') &&
+          !article.link.includes('moneycontrol.com') &&
+          !article.link.includes('business-standard.com')
+        );
+      }
+      if (!userPreferences.data[0].filings_updates) {
+        articles = articles.filter(article =>
+          !article.link.includes('nsearchives.nseindia.com')
+        );
+      }
+
+      if (!userPreferences.data[0].youtube_updates) {
+        articles = articles.filter(article =>
+          !article.link.includes('youtube.com')
+        );
+      }
     }
     
     // Remove duplicate articles

@@ -4,3 +4,6 @@ node_modules/
 dist/
 output.html
 output.pdf
+credentials.json
+*.pdf
+*.html
