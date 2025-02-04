@@ -232,7 +232,7 @@ class Config(TypedDict):
 
 def generate_html(config: Config) -> str:  
     header_html = f"""  
-        <header class="text-primary-foreground p-6 rounded-t-2xl mb-8 avoid-break" style="background-color: #0b4177;">  
+        <header class="text-primary-foreground p-6 rounded-t-2xl mb-8 avoid-break" style="background-color: #3B697E;">  
           <div class="flex items-center gap-4"><img src={config['header']['logo']} class="h-12 rounded-sm">  
             <div>  
               <h1 class="text-3xl font-bold">{config['header']['title']}</h1>  

@@ -12,7 +12,6 @@
  * @property {string} [P_E_Ratio]
  * @property {string} [P_B_Ratio]
  * @property {string} [ROE]
- * @property {string} [Dividend_Yield]
  * @property {string} [Price_to_200DMA]
  * @property {string} [Price_to_50DMA]
  */
@@ -85,6 +84,7 @@ import {
 } from './metrics.js';
 import dotenv from 'dotenv';
 import { createClerkClient } from '@clerk/backend';
+import { fetchCompanyData } from './restructure.js';
 
 dotenv.config();
 
@@ -103,12 +103,12 @@ async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, sup
   // Get current date and format week ending date
   const currentDate = new Date();
   const weekEnding = new Date(currentDate);
-  weekEnding.setDate(currentDate.getDate() + (5 - currentDate.getDay()));
+  weekEnding.setDate(currentDate.getDate());
   const weekEndingStr = weekEnding.toLocaleDateString('en-US', {
     day: 'numeric',
     month: 'short',
     year: 'numeric'
-  }).replace(/(\d+)/, '$1th');
+  });
   
   // Get broker settings
   const { data: settings, error: settingsError } = await supabase
@@ -140,6 +140,10 @@ async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, sup
     .eq('id', brokerId)
     .single();
   
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('*');
+  
   const brokerName = brokerData.name;
   
   // Get client data
@@ -161,7 +165,7 @@ async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, sup
   
   // Create header
   const header = {
-    title: clientData.name ? `${clientData.name}'s Weekly Portfolio Update` : 'Weekly Portfolio Update',
+    title: clientData.name ? `${clientData.name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}'s Weekly Portfolio Update` : 'Weekly Portfolio Update',
     date: `Week ended ${weekEndingStr}`,
     logo: `${brokerLogo}`,
     brokerName
@@ -183,59 +187,77 @@ async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, sup
     const symbol = companyInfo.symbol;
     
     // Get articles for the company
-    let { data: articles } = await supabase
-      .from('articles')
-      .select('title, sentiment, link, date, article_type')
-      .eq('company', companyInfo.name)
-      .order('date', { ascending: false });
+    // let { data: articles } = await supabase
+    //   .from('articles')
+    //   .select('title, summary, sentiment, link, date, article_type')
+    //   .eq('company', companyInfo.name)
+    //   .order('date', { ascending: false });
     
-    if (selectedCategories.length !== 5) {
-      articles = articles.filter(article => 
-        selectedCategories.includes(article.article_type)
-      );
-    }
+    // if (selectedCategories.length !== 5) {
+    //   articles = articles.filter(article => 
+    //     selectedCategories.includes(article.article_type)
+    //   );
+    // }
 
-    if (userPreferences.data?.length > 0) {
-      if (!userPreferences.data[0].news_updates) {
-        articles = articles.filter(article =>
-          !article.link.includes('economictimes.indiatimes.com') &&
-          !article.link.includes('livemint.com') &&
-          !article.link.includes('moneycontrol.com') &&
-          !article.link.includes('business-standard.com')
-        );
-      }
-      if (!userPreferences.data[0].filings_updates) {
-        articles = articles.filter(article =>
-          !article.link.includes('nsearchives.nseindia.com')
-        );
-      }
+    // if (userPreferences.data?.length > 0) {
+    //   if (!userPreferences.data[0].news_updates) {
+    //     articles = articles.filter(article =>
+    //       !article.link.includes('economictimes.indiatimes.com') &&
+    //       !article.link.includes('livemint.com') &&
+    //       !article.link.includes('moneycontrol.com') &&
+    //       !article.link.includes('business-standard.com')
+    //     );
+    //   }
+    //   if (!userPreferences.data[0].filings_updates) {
+    //     articles = articles.filter(article =>
+    //       !article.link.includes('nsearchives.nseindia.com') &&
+    //       !article.link.includes('bseindia.com')
+    //     );
+    //   }
 
-      if (!userPreferences.data[0].youtube_updates) {
-        articles = articles.filter(article =>
-          !article.link.includes('youtube.com')
-        );
-      }
-    }
+    //   if (!userPreferences.data[0].youtube_updates) {
+    //     articles = articles.filter(article =>
+    //       !article.link.includes('youtube.com')
+    //     );
+    //   }
+    // }
     
     // Remove duplicate articles
-    const uniqueArticles = Array.from(
-      new Map(articles.map(article => [article.link, article])).values()
-    );
+    // const uniqueArticles = Array.from(
+    //   new Map(articles.map(article => [article.link, article])).values()
+    // );
     
     // Process articles into NewsItem format
-    const newsItems = uniqueArticles.map(article => ({
-      sentiment: article.sentiment || 'neutral',
-      text: article.title,
-      link: article.link,
-      date: article.date.split('T')[0]
-    }));
+    // const newsItems = uniqueArticles.map(article => ({
+    //   sentiment: article.sentiment || 'neutral',
+    //   text: article.summary,
+    //   link: article.link,
+    //   date: article.date.split('T')[0]
+    // }));
+
+    const newsItems = await fetchCompanyData(companyInfo.name);
     
     // Get stock data using yahoo-finance
     const stockSymbol = `${symbol}.NS`;
-    const stockData = await yahooFinance.historical(stockSymbol, {
-      period1: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
-      period2: new Date()
-    });
+    let stockData;
+    try {
+      stockData = await yahooFinance.historical(stockSymbol, {
+        period1: new Date(new Date().getFullYear(), 0, 1),
+        period2: new Date()
+      });
+    } catch (e) {
+      // try with BSE symbol
+      try {
+        stockData = await yahooFinance.historical(`${symbol}.BO`, {
+          period1: new Date(new Date().getFullYear(), 0, 1),
+          period2: new Date()
+        });
+      } catch (e) {
+        console.log(`Error fetching stock data for ${symbol}`);
+        console.log(e);
+        return null;
+      }
+    }
     
     if (stockData.length > 0) {
       const currentPrice = stockData[stockData.length - 1].close;
@@ -248,43 +270,46 @@ async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, sup
       const ytdChange = ((currentPrice - ytdPrice) / ytdPrice) * 100;
       
       // Calculate technical signals
+      const isNumeric = /^\d+$/.test(symbol);
       const technicalSignals = {};
-      if (techSettings) {
-        if (techSettings.fifty_two_week_high) {
-          technicalSignals.fiftyTwoWeekHigh = await hit52WeekHigh(symbol);
-        }
-        if (techSettings.fifty_two_week_low) {
-          technicalSignals.fiftyTwoWeekLow = await hit52WeekLow(symbol);
-        }
-        if (techSettings.rsi_overbought) {
-          technicalSignals.rsiOverbought = await isRsiOverbought(
-            symbol,
-            techSettings.rsi_overbought_period,
-            techSettings.rsi_overbought_threshold
-          );
-        }
-        if (techSettings.rsi_oversold) {
-          technicalSignals.rsiOversold = await isRsiOversold(
-            symbol,
-            techSettings.rsi_oversold_period,
-            techSettings.rsi_oversold_threshold
-          );
-        }
-        if (techSettings.macd_bullish) {
-          technicalSignals.macdBullish = await isMacdBullishCrossover(
-            symbol,
-            techSettings.macd_bullish_fast,
-            techSettings.macd_bullish_slow,
-            techSettings.macd_bullish_signal
-          );
-        }
-        if (techSettings.macd_bearish) {
-          technicalSignals.macdBearish = await isMacdBearishCrossover(
-            symbol,
-            techSettings.macd_bearish_fast,
-            techSettings.macd_bearish_slow,
-            techSettings.macd_bearish_signal
-          );
+      if (!isNumeric) {
+        if (techSettings) {
+          if (techSettings.fifty_two_week_high) {
+            technicalSignals.fiftyTwoWeekHigh = await hit52WeekHigh(symbol);
+          }
+          if (techSettings.fifty_two_week_low) {
+            technicalSignals.fiftyTwoWeekLow = await hit52WeekLow(symbol);
+          }
+          if (techSettings.rsi_overbought) {
+            technicalSignals.rsiOverbought = await isRsiOverbought(
+              symbol,
+              techSettings.rsi_overbought_period,
+              techSettings.rsi_overbought_threshold
+            );
+          }
+          if (techSettings.rsi_oversold) {
+            technicalSignals.rsiOversold = await isRsiOversold(
+              symbol,
+              techSettings.rsi_oversold_period,
+              techSettings.rsi_oversold_threshold
+            );
+          }
+          if (techSettings.macd_bullish) {
+            technicalSignals.macdBullish = await isMacdBullishCrossover(
+              symbol,
+              techSettings.macd_bullish_fast,
+              techSettings.macd_bullish_slow,
+              techSettings.macd_bullish_signal
+            );
+          }
+          if (techSettings.macd_bearish) {
+            technicalSignals.macdBearish = await isMacdBearishCrossover(
+              symbol,
+              techSettings.macd_bearish_fast,
+              techSettings.macd_bearish_slow,
+              techSettings.macd_bearish_signal
+            );
+          }
         }
       }
       
@@ -294,7 +319,16 @@ async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, sup
       });
       
       // Get key metrics
-      const metricsData = await getStockMetrics(symbol);
+      // Check if symbol is all numeric
+      // Check if symbol is all numeric
+      // This regex matches if the string consists entirely of digits
+      // Example: '12345' matches, but '123-45' and '123.45' don't
+      let metricsData;
+      if (isNumeric) {
+        metricsData = {};
+      } else {
+        metricsData = await getStockMetrics(symbol);
+      }
       const keyMetrics = {};
       for (const metric of selectedMetrics) {
         const metricKey = metric.replace(/ /g, '_').replace(/\//g, '_');
@@ -307,7 +341,7 @@ async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, sup
       // Get insights
       const { data: insights } = await supabase
         .from('weekly_report_insights')
-        .select('title, description')
+        .select('title, description, category_id')
         .eq('broker_id', brokerId)
         .eq('company_id', companyInfo.id)
         .eq('week_window', 'current');
@@ -315,16 +349,24 @@ async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, sup
       // Get research reports
       const { data: reports } = await supabase
         .from('research_reports')
-        .select('title, file_url')
+        .select('title, file_url, category_id, file_key')
         .eq('broker_id', brokerId)
         .eq('company_id', companyInfo.id)
         .order('created_at', { ascending: false });
-      
+
+      const fileKeys = reports.map(report => report.file_key);
+
+      const { data: summaryReports } = await supabase
+        .from('summarized_report')
+        .select('file_key, summary')
+        .in('file_key', fileKeys);
+
+        
       return {
         name: companyInfo.name,
         symbol,
         ISIN: companyInfo.ISIN,
-        icon: `https://financialmodelingprep.com/image-stock/${symbol}.NS.png?height=30`,
+        icon: `https://images.5paisa.com/MarketIcons/${symbol}.png?height=30`,
         weeklyClose: `₹${currentPrice.toFixed(2)}`,
         weeklyChange: `${weeklyChange >= 0 ? '+' : ''}${weeklyChange.toFixed(1)}%`,
         ytdChange: `${ytdChange >= 0 ? '+' : ''}${ytdChange.toFixed(1)}%`,
@@ -333,11 +375,14 @@ async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, sup
         news: newsItems,
         insights: insights.map(insight => ({
           title: insight.title,
-          description: insight.description
+          description: insight.description,
+          category: categories.find(category => category.id === insight.category_id)?.name
         })),
         analystReports: reports.map(report => ({
           title: report.title,
-          link: report.file_url
+          link: report.file_url,
+          category: categories.find(category => category.id === report.category_id)?.name,
+          summary: summaryReports.find(summary => summary.file_key === report.file_key)?.summary || ''
         }))
       };
     }
@@ -346,29 +391,43 @@ async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, sup
   // Get general insights
   const { data: generalInsights } = await supabase
     .from('weekly_report_insights')
-    .select('title, description')
+    .select('title, description, category_id')
     .eq('broker_id', brokerId)
-    .is('company_id', null)
-    .eq('week_window', 'current');
+    .is('company_id', null);
+      
+  console.log('generalInsights', generalInsights);
   
   // Get general research reports
   const { data: generalReports } = await supabase
     .from('research_reports')
-    .select('title, file_url')
+    .select('title, file_url, category_id, file_key')
     .eq('broker_id', brokerId)
     .is('company_id', null)
     .order('created_at', { ascending: false });
+
+  const fileKeys = generalReports.map(report => report.file_key.replace(/\s/g, "+"));
   
+  const { data: summaryReports } = await supabase
+    .from('summarized_report')
+    .select('file_key, summary')
+    .in('file_key', fileKeys);
+
+  console.log('generalReports', generalReports);
+  console.log('summaryReports', summaryReports);
+
   return {
     header,
     companies: companies.filter(Boolean),
     generalInsights: generalInsights.map(insight => ({
       title: insight.title,
-      description: insight.description
+      description: insight.description,
+      category: categories.find(category => category.id === insight.category_id)?.name
     })),
     generalAnalystReports: generalReports.map(report => ({
       title: report.title,
-      link: report.file_url
+      link: report.file_url,
+      category: categories.find(category => category.id === report.category_id)?.name,
+      summary: summaryReports.find(summary => summary.file_key === report.file_key.replace(/\s/g, "+"))?.summary || ''
     }))
   };
 }

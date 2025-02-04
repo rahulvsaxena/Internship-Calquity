@@ -7,8 +7,11 @@ import yahooFinance from 'yahoo-finance2';
  */
 async function hit52WeekHigh(tickerSymbol) {
   try {
-    // Append .NS if not already present
-    if (!tickerSymbol.endsWith('.NS')) {
+    // Check if ticker symbol is all numeric
+    if (/^\d+$/.test(tickerSymbol)) {
+      tickerSymbol = `${tickerSymbol}.BO`;
+    }
+    else if (!tickerSymbol.endsWith('.NS')) {
       tickerSymbol = `${tickerSymbol}.NS`;
     }
 
@@ -49,7 +52,10 @@ async function hit52WeekHigh(tickerSymbol) {
  */
 async function hit52WeekLow(tickerSymbol) {
   try {
-    if (!tickerSymbol.endsWith('.NS')) {
+    if (/^\d+$/.test(tickerSymbol)) {
+      tickerSymbol = `${tickerSymbol}.BO`;
+    }
+    else if (!tickerSymbol.endsWith('.NS')) {
       tickerSymbol = `${tickerSymbol}.NS`;
     }
 
@@ -130,7 +136,10 @@ function calculateRSI(data, period) {
  */
 async function isRsiOverbought(tickerSymbol, period = 14, threshold = 70) {
   try {
-    if (!tickerSymbol.endsWith('.NS')) {
+    if (/^\d+$/.test(tickerSymbol)) {
+      tickerSymbol = `${tickerSymbol}.BO`;
+    }
+    else if (!tickerSymbol.endsWith('.NS')) {
       tickerSymbol = `${tickerSymbol}.NS`;
     }
 
@@ -165,7 +174,10 @@ async function isRsiOverbought(tickerSymbol, period = 14, threshold = 70) {
  */
 async function isRsiOversold(tickerSymbol, period = 14, threshold = 30) {
   try {
-    if (!tickerSymbol.endsWith('.NS')) {
+    if (/^\d+$/.test(tickerSymbol)) {
+      tickerSymbol = `${tickerSymbol}.BO`;
+    }
+    else if (!tickerSymbol.endsWith('.NS')) {
       tickerSymbol = `${tickerSymbol}.NS`;
     }
 
@@ -223,7 +235,10 @@ async function isMacdBullishCrossover(
   signalPeriod = 9
 ) {
   try {
-    if (!tickerSymbol.endsWith('.NS')) {
+    if (/^\d+$/.test(tickerSymbol)) {
+      tickerSymbol = `${tickerSymbol}.BO`;
+    }
+    else if (!tickerSymbol.endsWith('.NS')) {
       tickerSymbol = `${tickerSymbol}.NS`;
     }
 
@@ -276,7 +291,10 @@ async function isMacdBearishCrossover(
   signalPeriod = 9
 ) {
   try {
-    if (!tickerSymbol.endsWith('.NS')) {
+    if (/^\d+$/.test(tickerSymbol)) {
+      tickerSymbol = `${tickerSymbol}.BO`;
+    }
+    else if (!tickerSymbol.endsWith('.NS')) {
       tickerSymbol = `${tickerSymbol}.NS`;
     }
 
@@ -321,7 +339,10 @@ async function isMacdBearishCrossover(
  */
 async function getStockMetrics(tickerSymbol) {
   try {
-    if (!tickerSymbol.endsWith('.NS')) {
+    if (/^\d+$/.test(tickerSymbol)) {
+      tickerSymbol = `${tickerSymbol}.BO`;
+    }
+    else if (!tickerSymbol.endsWith('.NS')) {
       tickerSymbol = `${tickerSymbol}.NS`;
     }
 
@@ -350,7 +371,7 @@ async function getStockMetrics(tickerSymbol) {
     const currentPrice = histData[histData.length - 1].close;
 
     const metrics = {
-      Ticker: tickerSymbol.replace('.NS', ''),
+      Ticker: tickerSymbol.replace('.NS', '').replace('.BO', ''),
       Last_Updated: new Date().toISOString(),
 
       // Price and Moving Averages
@@ -363,7 +384,7 @@ async function getStockMetrics(tickerSymbol) {
       // Valuation Metrics
       P_E_Ratio: Number((quote.trailingPE || NaN).toFixed(2)),
       P_B_Ratio: Number((quote.priceToBook || NaN).toFixed(2)),
-      Dividend_Yield: Number(((quote.dividendYield || 0) * 100).toFixed(2)),
+      // Dividend_Yield: Number(((quote.dividendYield || 0) * 100).toFixed(2)),
 
       // Financial Metrics
       ROE: Number(((info.financialData?.returnOnEquity || 0) * 100).toFixed(2)),
@@ -379,6 +400,9 @@ async function getStockMetrics(tickerSymbol) {
     return { error: `An error occurred: ${error.message}` };
   }
 }
+
+// Example usage
+// hit52WeekHigh('540190').then(console.log);
 
 export {
   hit52WeekHigh,

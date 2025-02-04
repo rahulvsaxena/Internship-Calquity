@@ -101,12 +101,12 @@ async function getFinancialConfig(emailId, brokerId, brokerLogo, supabaseUrl, su
   // Get current date and format week ending date
   const currentDate = new Date();
   const weekEnding = new Date(currentDate);
-  weekEnding.setDate(currentDate.getDate() + (5 - currentDate.getDay()));
+  weekEnding.setDate(currentDate.getDate());
   const weekEndingStr = weekEnding.toLocaleDateString('en-US', {
     day: 'numeric',
     month: 'short',
     year: 'numeric'
-  }).replace(/(\d+)/, '$1th');
+  });
   
   // Get broker settings
   const { data: settings, error: settingsError } = await supabase
@@ -198,7 +198,7 @@ async function getFinancialConfig(emailId, brokerId, brokerLogo, supabaseUrl, su
     // Get stock data using yahoo-finance
     const stockSymbol = `${symbol}.NS`;
     const stockData = await yahooFinance.historical(stockSymbol, {
-      period1: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
+      period1: new Date(new Date().getFullYear(), 0, 1),
       period2: new Date()
     });
     

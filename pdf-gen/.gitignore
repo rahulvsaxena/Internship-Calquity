@@ -7,3 +7,5 @@ output.pdf
 credentials.json
 *.pdf
 *.html
+token.json
+tempCodeRunnerFile.js

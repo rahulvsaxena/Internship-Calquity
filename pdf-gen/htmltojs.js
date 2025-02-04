@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import { createClerkClient } from '@clerk/backend';
 import { createClient } from '@supabase/supabase-js';
 import Razorpay from 'razorpay';
+import { sendEmail } from './mail_sender.js';
 
 dotenv.config();
 
@@ -125,7 +126,7 @@ async function sendToWhatsapp(pdfFilename, phoneNumber, weekly_report_date, name
       to: phoneNumber,
       type: "template",
       template: {
-        name: "weekly_update",
+        name: "weekly_update_2",
         language: {
           code: "en"
         },
@@ -217,7 +218,7 @@ async function getSubscription(userId) {
       }
 
       const isFreeTrial = subscription.status === 'authenticated';
-      const isActive = subscription.status === 'active' || isFreeTrial;
+      const isActive = subscription.status === 'active' || isFreeTrial || subscription.status === 'pending';
       let numberOfDaysLeft = -1;
       if (isFreeTrial) {
         const subscriptionStartAt = subscription.start_at;
@@ -235,19 +236,24 @@ async function getSubscription(userId) {
   });
 }
 
-async function generateAndSendPdf(userId, brokerId, brokerLogo, phoneNumber = null) {
+async function generateAndSendPdf(userId, brokerId, brokerLogo, phoneNumber = null, emailId = null) {
   const regex = /\/\*([\s\S]*?)\*\//g;
   const { html, brokerName } = await generateCleanedHtml(userId, brokerId, brokerLogo);
+  if (!html) {
+    console.log('No data found for user:', userId);
+    return;
+  }
   // Replace all matches with empty string
   const htmlSafe = html.replace(regex, '');
   const currentDate = new Date();
   const weekEnding = new Date(currentDate);
-  weekEnding.setDate(currentDate.getDate() + (5 - currentDate.getDay()));
+  weekEnding.setDate(currentDate.getDate());
   const weekEndingStr = weekEnding.toLocaleDateString('en-US', {
     day: 'numeric',
     month: 'short',
     year: 'numeric'
-  }).replace(/(\d+)/, '$1th');
+  });
+  
   const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
   const user = await clerkClient.users.getUser(userId);
 
@@ -267,42 +273,151 @@ async function generateAndSendPdf(userId, brokerId, brokerLogo, phoneNumber = nu
 
   // Execute the conversion
   await convertHtmlToPdf(htmlSafe, `Weekly Report-${weekEndingStr}-${clientData.email}-${brokerId}.pdf`, brokerName);
-  await sendToWhatsapp(`Weekly Report-${weekEndingStr}-${clientData.email}-${brokerId}.pdf`, phoneNumber || phone, weekEndingStr, clientData.name);
+  const pdfName = `Weekly Report-${clientData.name || ''}-${weekEndingStr}.pdf`
+  await sendEmail(emailId || clientData.email, `Your Personalized Weekly Report for the Week ending on ${weekEndingStr} by CQNow`, "Please find attached your personalized weekly report.\n\nBest regards,\nCQNow",`Weekly Report-${weekEndingStr}-${clientData.email}-${brokerId}.pdf`, pdfName);
+  await sendToWhatsapp(`Weekly Report-${weekEndingStr}-${clientData.email}-${brokerId}.pdf`, phoneNumber || phone, weekEndingStr, clientData.name || '');
 }
 
 // Example usage
-const userId = "user_2q7HKkpKC97m06IvH9MBRU9Y6Hy";
-const brokerId = 1;
+// const userId = "user_2q7HKkpKC97m06IvH9MBRU9Y6Hy";
+// const phoneNumber = "919051414840";
 const phoneNumber = "919830547856";
-const logo = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="50 50 495.28 495.28" width="80" height="80">
-  <defs>
-    <filter id="drop-shadow-1" filterUnits="userSpaceOnUse">
-      <feOffset dx="7" dy="7"/>
-      <feGaussianBlur result="blur" stdDeviation="2.83"/>
-      <feFlood flood-color="#000" flood-opacity=".75"/>
-      <feComposite in2="blur" operator="in"/>
-      <feComposite in="SourceGraphic"/>
-    </filter>
-    <filter id="drop-shadow-2" filterUnits="userSpaceOnUse">
-      <feOffset dx="7" dy="7"/>
-      <feGaussianBlur result="blur-2" stdDeviation="5"/>
-      <feFlood flood-color="#000" flood-opacity=".75"/>
-      <feComposite in2="blur-2" operator="in"/>
-      <feComposite in="SourceGraphic"/>
-    </filter>
-  </defs>
-  <g>
-    <polyline style="fill: none; stroke: #fff; stroke-linejoin: round; stroke-width: 25px; filter: url(#drop-shadow-1);" points="285.03 177.91 285.03 142.21 136.59 142.21 136.59 285.02 433.46 285.02 433.45 427.83 285.03 427.83 285.03 249.32"/>
-    <line style="fill: none; stroke: #fff; stroke-linejoin: round; stroke-width: 25px; filter: url(#drop-shadow-2);" x1="458.68" y1="453.07" x2="433.45" y2="427.83"/>
-  </g>
-</svg>`;
-// const logo = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTMQ1smT0Jr19WHt2eec_ezeODfuoT9BRTlGA&s"
-// await generateAndSendPdf(userId, brokerId, logo, phoneNumber);
+const emailId = "pratham@calquity.com"
+const brokerId = 1;
+// const logo = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="50 50 495.28 495.28" width="80" height="80">
+//   <defs>
+//     <filter id="drop-shadow-1" filterUnits="userSpaceOnUse">
+//       <feOffset dx="7" dy="7"/>
+//       <feGaussianBlur result="blur" stdDeviation="2.83"/>
+//       <feFlood flood-color="#000" flood-opacity=".75"/>
+//       <feComposite in2="blur" operator="in"/>
+//       <feComposite in="SourceGraphic"/>
+//     </filter>
+//     <filter id="drop-shadow-2" filterUnits="userSpaceOnUse">
+//       <feOffset dx="7" dy="7"/>
+//       <feGaussianBlur result="blur-2" stdDeviation="5"/>
+//       <feFlood flood-color="#000" flood-opacity=".75"/>
+//       <feComposite in2="blur-2" operator="in"/>
+//       <feComposite in="SourceGraphic"/>
+//     </filter>
+//   </defs>
+//   <g>
+//     <polyline style="fill: none; stroke: #fff; stroke-linejoin: round; stroke-width: 25px; filter: url(#drop-shadow-1);" points="285.03 177.91 285.03 142.21 136.59 142.21 136.59 285.02 433.46 285.02 433.45 427.83 285.03 427.83 285.03 249.32"/>
+//     <line style="fill: none; stroke: #fff; stroke-linejoin: round; stroke-width: 25px; filter: url(#drop-shadow-2);" x1="458.68" y1="453.07" x2="433.45" y2="427.83"/>
+//   </g>
+// </svg>`;
+const logo = "https://infinity.eurekasec.com/assets/client-logo.svg";
+// const logo = "https://jayeshcommercial.com/wp-content/uploads/2020/09/main-logo.png";
+
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-const userList = await clerkClient.users.getUserList();
-userList.data.forEach(async (user) => {
+const userList = await clerkClient.users.getUserList({
+  limit: 500,
+});
+console.log(userList.data.length);
+// for (let i = 0; i < userList.data.length; i++) {
+//   const user = userList.data[i];
+//   let name = user.fullName || user.firstName || user.lastName;
+//   if (!name) {
+//     name = user.emailAddresses[0].emailAddress;
+//     name = name.split('@')[0];
+//   }
+//   // Remove any trailing numbers
+//   name = name.replace(/\d+$/, '');
+//   const userId = user.id;
+//   let referralCode = name.toLowerCase().replace(/ /g, '');
+//   // Generate referral code out of first 4 characters of name if 4 exist and last 5 digits of user id
+//   referralCode = referralCode.slice(0, 4) + userId.slice(-5);
+//   // Add 2 random digits at the end
+//   // const randomDigits = Math.floor(Math.random() * 100);
+//   // referralCode = referralCode + randomDigits;
+//   // Make it all uppercase
+//   const referralCodeUpper = referralCode.toUpperCase();
+//   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+//   await supabase.from('phone_verifications').update({ referral_code: referralCodeUpper }).eq('user_id', userId);
+//   const offers = [
+//     {
+//       plan_id: 'plan_PeZiIdpxSH0TaF',
+//       coupon_code: referralCodeUpper,
+//       discount_percentage: 15,
+//       is_valid: true,
+//       is_yearly: false,
+//       plan_type: 'CQNow Essential'
+//     },
+//     {
+//       plan_id: 'plan_PeZjxVvYmlnsJz',
+//       coupon_code: referralCodeUpper,
+//       discount_percentage: 15,
+//       is_valid: true,
+//       is_yearly: false,
+//       plan_type: 'CQNow Pro'
+//     },
+//     {
+//       plan_id: 'plan_PeZm6Mue0Gr4Vv',
+//       coupon_code: referralCodeUpper,
+//       discount_percentage: 15,
+//       is_valid: true,
+//       is_yearly: false,
+//       plan_type: 'CQNow Starter'
+//     },
+//     {
+//       plan_id: 'plan_PeZq9Hy84JcZvw',
+//       coupon_code: referralCodeUpper,
+//       discount_percentage: 15,
+//       is_valid: true,
+//       is_yearly: true,
+//       plan_type: 'CQNow Starter Yearly'
+//     },
+//     {
+//       plan_id: 'plan_PeZsLeodTV60EL',
+//       coupon_code: referralCodeUpper,
+//       discount_percentage: 15,
+//       is_valid: true,
+//       is_yearly: true,
+//       plan_type: 'CQNow Essential Yearly'
+//     },
+//     {
+//       plan_id: 'plan_PeZtl2jWdYHBFc',
+//       coupon_code: referralCodeUpper,
+//       discount_percentage: 15,
+//       is_valid: true,
+//       is_yearly: true,
+//       plan_type: 'CQNow Pro Yearly'
+//     }
+//   ];
+  
+//   const { data, error } = await supabase
+//     .from('offers')
+//     .insert(offers)
+//     .select()
+// }
+
+for (let i = userList.data.length - 1; i >= 0; i--) {
+  const user = userList.data[i];
+  if (user.emailAddresses[0].emailAddress === "pratham@calquity.com") {
+    continue;
+  }
+  // if (user.emailAddresses[0].emailAddress !== "aditagarwal10@gmail.com" && user.emailAddresses[0].emailAddress !== "choudharysahil1710@gmail.com") {
+  //   continue;
+  // }
+  const whiteList = ["paranjaybiz@gmail.com"];
+  if (!whiteList.includes(user.emailAddresses[0].emailAddress)) {
+    continue;
+  }
+
+  // if (user.emailAddresses[0].emailAddress !== "aditagarwal10@gmail.com") {
+  //   continue;
+  // }
+  // if (user.emailAddresses[0].emailAddress !== "shreyash1402@gmail.com") {
+  //   continue
+  // }
+  console.log(user.emailAddresses[0].emailAddress);
   const subscription = await getSubscription(user.id);
   if (subscription.success) {
-    await generateAndSendPdf(user.id, brokerId, logo, phoneNumber);
+    console.log(subscription.success);
+    await generateAndSendPdf(user.id, brokerId, logo, phoneNumber, emailId);
+  } else {
+    console.log(subscription.error);
   }
-});
+}
+// await sendToWhatsapp("SampleMorningReport.pdf", phoneNumber, "12th March 2022", "Pratham");
+// await generateAndSendPdf("user_2q9y1PVRvqZ8gQeNktQpJ872KkK", brokerId, logo);

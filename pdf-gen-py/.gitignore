@@ -2,3 +2,5 @@ __pycache__/
 .env
 output.html
 output.pdf
+*.html
+./pdf-gen-py/*.html
