@@ -175,7 +175,8 @@ async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, sup
   const { data: companiesData } = await supabase
     .from('stocks')
     .select('*, companies(*)')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
 
   const { data: userPreferences } = await supabase
     .from('notification_preferences')

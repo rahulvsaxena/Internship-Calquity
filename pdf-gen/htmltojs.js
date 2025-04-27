@@ -189,7 +189,7 @@ async function sendToWhatsapp(pdfFilename, phoneNumber, weekly_report_date, name
 
 async function getSubscription(userId) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-  const { data: subscriptionResponse } = await supabase.from('subscriptions').select('id').eq('user_id', userId);
+  const { data: subscriptionResponse } = await supabase.from('subscriptions').select('id,is_bypassed').eq('user_id', userId);
 
   if (subscriptionResponse.length === 0) {
     return { success: false, error: 'Subscription not found', status: 404 };
@@ -201,7 +201,7 @@ async function getSubscription(userId) {
   });
 
   return new Promise((resolve) => {
-    instance.subscriptions.fetch(subscriptionResponse[0].id, (err, subscription) => {
+    instance.subscriptions.fetch(subscriptionResponse[0].id, async (err, subscription) => {
       if (err) {
         resolve({ success: false, error: 'Subscription not found', status: 404 });
         return;
@@ -217,7 +217,13 @@ async function getSubscription(userId) {
         return;
       }
 
-      const isFreeTrial = subscription.status === 'authenticated';
+      let isFreeTrial = subscription.status === 'authenticated';
+      let isBypassed = false;
+      console.log('Subscription status', subscription.status);
+      if (subscriptionResponse[0].is_bypassed === true && subscription.status === 'created') {
+        isFreeTrial = true;
+        isBypassed = true;
+      }
       const isActive = subscription.status === 'active' || isFreeTrial || subscription.status === 'pending';
       let numberOfDaysLeft = -1;
       if (isFreeTrial) {
@@ -235,6 +241,7 @@ async function getSubscription(userId) {
     });
   });
 }
+
 
 async function generateAndSendPdf(userId, brokerId, brokerLogo, phoneNumber = null, emailId = null) {
   const regex = /\/\*([\s\S]*?)\*\//g;
@@ -284,29 +291,29 @@ async function generateAndSendPdf(userId, brokerId, brokerLogo, phoneNumber = nu
 const phoneNumber = "919830547856";
 const emailId = "pratham@calquity.com"
 const brokerId = 1;
-// const logo = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="50 50 495.28 495.28" width="80" height="80">
-//   <defs>
-//     <filter id="drop-shadow-1" filterUnits="userSpaceOnUse">
-//       <feOffset dx="7" dy="7"/>
-//       <feGaussianBlur result="blur" stdDeviation="2.83"/>
-//       <feFlood flood-color="#000" flood-opacity=".75"/>
-//       <feComposite in2="blur" operator="in"/>
-//       <feComposite in="SourceGraphic"/>
-//     </filter>
-//     <filter id="drop-shadow-2" filterUnits="userSpaceOnUse">
-//       <feOffset dx="7" dy="7"/>
-//       <feGaussianBlur result="blur-2" stdDeviation="5"/>
-//       <feFlood flood-color="#000" flood-opacity=".75"/>
-//       <feComposite in2="blur-2" operator="in"/>
-//       <feComposite in="SourceGraphic"/>
-//     </filter>
-//   </defs>
-//   <g>
-//     <polyline style="fill: none; stroke: #fff; stroke-linejoin: round; stroke-width: 25px; filter: url(#drop-shadow-1);" points="285.03 177.91 285.03 142.21 136.59 142.21 136.59 285.02 433.46 285.02 433.45 427.83 285.03 427.83 285.03 249.32"/>
-//     <line style="fill: none; stroke: #fff; stroke-linejoin: round; stroke-width: 25px; filter: url(#drop-shadow-2);" x1="458.68" y1="453.07" x2="433.45" y2="427.83"/>
-//   </g>
-// </svg>`;
-const logo = "https://infinity.eurekasec.com/assets/client-logo.svg";
+const logo = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="50 50 495.28 495.28" width="80" height="80">
+  <defs>
+    <filter id="drop-shadow-1" filterUnits="userSpaceOnUse">
+      <feOffset dx="7" dy="7"/>
+      <feGaussianBlur result="blur" stdDeviation="2.83"/>
+      <feFlood flood-color="#000" flood-opacity=".75"/>
+      <feComposite in2="blur" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="drop-shadow-2" filterUnits="userSpaceOnUse">
+      <feOffset dx="7" dy="7"/>
+      <feGaussianBlur result="blur-2" stdDeviation="5"/>
+      <feFlood flood-color="#000" flood-opacity=".75"/>
+      <feComposite in2="blur-2" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <g>
+    <polyline style="fill: none; stroke: #fff; stroke-linejoin: round; stroke-width: 25px; filter: url(#drop-shadow-1);" points="285.03 177.91 285.03 142.21 136.59 142.21 136.59 285.02 433.46 285.02 433.45 427.83 285.03 427.83 285.03 249.32"/>
+    <line style="fill: none; stroke: #fff; stroke-linejoin: round; stroke-width: 25px; filter: url(#drop-shadow-2);" x1="458.68" y1="453.07" x2="433.45" y2="427.83"/>
+  </g>
+</svg>`;
+// const logo = "https://infinity.eurekasec.com/assets/client-logo.svg";
 // const logo = "https://jayeshcommercial.com/wp-content/uploads/2020/09/main-logo.png";
 
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
@@ -393,21 +400,21 @@ console.log(userList.data.length);
 
 for (let i = userList.data.length - 1; i >= 0; i--) {
   const user = userList.data[i];
-  if (user.emailAddresses[0].emailAddress === "pratham@calquity.com") {
+  if (user.emailAddresses[0].emailAddress !== "pratham@calquity.com") {
     continue;
   }
   // if (user.emailAddresses[0].emailAddress !== "aditagarwal10@gmail.com" && user.emailAddresses[0].emailAddress !== "choudharysahil1710@gmail.com") {
   //   continue;
   // }
-  const whiteList = ["paranjaybiz@gmail.com"];
-  if (!whiteList.includes(user.emailAddresses[0].emailAddress)) {
-    continue;
-  }
+  // const whiteList = ["paranjaybiz@gmail.com"];
+  // if (!whiteList.includes(user.emailAddresses[0].emailAddress)) {
+  //   continue;
+  // }
 
   // if (user.emailAddresses[0].emailAddress !== "aditagarwal10@gmail.com") {
   //   continue;
   // }
-  // if (user.emailAddresses[0].emailAddress !== "shreyash1402@gmail.com") {
+  // if (user.emailAddresses[0].emailAddress !== "paranjaybiz@gmail.com") {
   //   continue
   // }
   console.log(user.emailAddresses[0].emailAddress);

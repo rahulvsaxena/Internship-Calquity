@@ -3,14 +3,23 @@ import dotenv from 'dotenv';
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
+import Bottleneck from 'bottleneck';
 
 dotenv.config();
+
+const limiter = new Bottleneck({
+  minTime: 200, // Minimum time between requests in milliseconds
+  maxConcurrent: 100, // Maximum number of concurrent requests
+  reservoir: 100, // initial value
+  reservoirRefreshAmount: 100,
+  reservoirRefreshInterval: 60 * 1000, // must be divisible by 250
+});
 
 async function restructureCompany(table_data, company) {
 const analysis_prompt = `
 You are analyzing financial news articles for a specific company. Your task is to:
     1. Organize the information by grouping similar themed articles together in sections
-    2. Within each section, create HTML-formatted bullet points describing the points for that section. Bold key terms and numbers using the HTML <b> tag. Only use HTML tags for formatting. Don't use markdown or other formatting languages.
+    2. Within each section, create HTML-formatted bullet points describing the points for that section. Bold key terms and numbers using the HTML <b> tag. Only use HTML tags for formatting. Don't use markdown or other formatting languages. Don't enclose the points in <ul> or <li> tags.
     3. Maintain all source links for each section at the end of the section ONLY
     4. Keep the output focused on financial implications and recommendations
     5. Make sure to include all relevant information from the articles
@@ -47,14 +56,14 @@ You are analyzing financial news articles for a specific company. Your task is t
 
   try {
 
-    const response = await axios.post(
+    const response = await limiter.schedule(() => axios.post(
       `${process.env.AZURE_ENDPOINT}/openai/deployments/gpt-4o/chat/completions?api-version=${process.env.AZURE_API_VERSION}`,
       {
           messages: [
               { role: 'user', content: analysis_prompt }
           ],
-          temperature: 0.2,
-          response_format: { type: 'json_object' }
+          response_format: { type: 'json_object' },
+          temperature: 0.1,
       },
       {
           headers: {
@@ -62,12 +71,12 @@ You are analyzing financial news articles for a specific company. Your task is t
               'api-key': process.env.AZURE_API_KEY
           }
       }
-  );
+  ));
 
     return JSON.parse(response.data.choices[0].message.content).sections;
   } catch (error) {
-    console.error('Error analyzing article:', error);
-    throw error;
+    console.error('Error analyzing article:', error['response']['data']);
+    // throw error;
   }
 }
 

@@ -387,7 +387,7 @@ async function getStockMetrics(tickerSymbol) {
       // Dividend_Yield: Number(((quote.dividendYield || 0) * 100).toFixed(2)),
 
       // Financial Metrics
-      ROE: Number(((info.financialData?.returnOnEquity || 0) * 100).toFixed(2)),
+      // ROE: Number(((info.financialData?.returnOnEquity || 0) * 100).toFixed(2)),
 
       // Sector Information
       Sector: info.summaryProfile?.sector || 'N/A',

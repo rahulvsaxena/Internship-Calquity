@@ -483,6 +483,9 @@ async function generateCleanedHtml(userId, brokerId, brokerLogo) {
 
     // Remove any backtick content
     const cleanedHtml = htmlOutput.replace(/`.*?`/g, '');
+
+    // Write the cleaned HTML to a file
+    // fs.writeFileSync('cleaned.html', cleanedHtml);
     return {
         html: cleanedHtml,
         brokerName: config.header.brokerName
