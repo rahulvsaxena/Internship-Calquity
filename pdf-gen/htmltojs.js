@@ -288,8 +288,8 @@ async function generateAndSendPdf(userId, brokerId, brokerLogo, phoneNumber = nu
 // Example usage
 // const userId = "user_2q7HKkpKC97m06IvH9MBRU9Y6Hy";
 // const phoneNumber = "919051414840";
-const phoneNumber = "919830547856";
-const emailId = "pratham@calquity.com"
+const phoneNumber = "919773600410";
+const emailId = "rahul.saxena@calquity.com"
 const brokerId = 1;
 const logo = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="50 50 495.28 495.28" width="80" height="80">
   <defs>

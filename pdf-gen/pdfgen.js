@@ -84,6 +84,26 @@ import path from 'path';
 
 dotenv.config();
 const generateHtml = (config) => {
+    // Helper to generate a pastel color from the symbol
+    function getPastelColor(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const h = Math.abs(hash) % 360;
+        return `hsl(${h}, 70%, 85%)`;
+    }
+
+    // Helper to generate a darker color for the text based on the pastel background
+    function getDarkerColor(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const h = Math.abs(hash) % 360;
+        return `hsl(${h}, 70%, 35%)`;
+    }
+
     let headerHtml = `
       <header class="text-primary-foreground p-6 rounded-t-2xl mb-8 avoid-break" style="background-color: #3B697E;">
           <div class="flex items-center gap-4">${config.header.logo}
@@ -120,10 +140,29 @@ const generateHtml = (config) => {
 
         const ytdChangeColor = company.ytdChange.includes('+') ? "text-green-600" : "text-red-600";
 
+        const logoHtml = company.icon && company.icon.startsWith('http')
+            ? `<img src="${company.icon}" class="h-10 w-10 rounded-full object-cover">`
+            : `<div class="rounded-full flex items-center justify-center">
+                <div class="rounded-full flex items-center justify-center"
+                    style="
+                      width: 32px; height: 32px;
+                      background: ${getPastelColor(company.symbol)};
+                      color: ${getDarkerColor(company.symbol)};
+                      font-family: 'Inter', sans-serif;
+                      font-weight: 700;
+                      font-size: 14px;
+                    ">
+                    ${company.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
+                </div>
+            </div>`;
+
         return `
           <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
               <td class="p-2 align-middle font-medium">
-                  <div class="flex items-center gap-2 justify-start"><img src="${company.icon}" class="h-4 rounded-sm"><span class="text-left">${company.name} (${company.symbol})</span></div>
+                  <div class="flex items-center gap-2 justify-start">
+                    ${logoHtml}
+                    <span class="text-left">${company.name} (${company.symbol})</span>
+                  </div>
               </td>
               <td class="p-2 align-middle text-center">${company.weeklyClose}</td>
               <td class="p-2 align-middle text-center py-3">
@@ -190,6 +229,26 @@ const generateHtml = (config) => {
 
     const generateCompanyUpdates = () => {
         return config.companies.map(company => {
+            const logoHtml = company.icon && company.icon.startsWith('http')
+                ? `<img src="${company.icon}" class="h-10 w-10 rounded-full object-cover">`
+                : `<div class="rounded-full flex items-center justify-center">
+                    <div class="rounded-full flex items-center justify-center"
+                        style="
+                          width: 32px; height: 32px;
+                          background: ${getPastelColor(company.symbol)};
+                          color: ${getDarkerColor(company.symbol)};
+                          font-family: 'Inter', sans-serif;
+                          font-weight: 700;
+                          font-size: 14px;
+                        ">
+                        ${company.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
+                    </div>
+                </div>`;
+
+            if (!company.news?.length) {
+                return '';
+            }
+
             const keyMetricsHtml = company.keyMetrics && Object.keys(company.keyMetrics).length ? `
               <div class="grid grid-cols-${Object.keys(company.keyMetrics).length} gap-4 mb-4 p-3 rounded-lg justify-center avoid-break key-metric">
                   ${Object.entries(company.keyMetrics).map(([k, v]) => `
@@ -386,27 +445,30 @@ const generateHtml = (config) => {
 
             return `
               <div class="rounded-xl border bg-card text-card-foreground avoid-break">
-<div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2 font-semibold text-xl text-left">
-                                <img src="${company.icon}" class="h-6 rounded-sm">${company.name} (${company.symbol})
-                            </div>
-                            <div>
-                                ${generateTechnicalTriggers()}
-                                <div class="text-base mt-1 font-semibold ${company.weeklyChange.includes('+') ? 'text-green-600' : 'text-red-600'}">${company.weeklyClose}</div>
-                            </div>
-                        </div>
+                <div class="flex flex-col space-y-1.5 p-4 bg-secondary rounded-t-xl company-update">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      ${logoHtml}
+                      <div style="margin-left: 0.75rem; display: flex; flex-direction: column; align-items: flex-start;">
+                        <span style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 16px; color: #1A202C;">${company.name}</span>
+                        <span style="font-family: 'Inter', sans-serif; font-size: 13px; color: #6B7280;">${company.symbol}</span>
+                      </div>
                     </div>
-                    <div class="p-4">
-                        ${keyMetricsHtml}
-                        <div class="space-y-4">
-                            ${generateInsightsHtml()}
-                            ${generateAnalystReportsHtml()}
-                            ${generateNewsHtml()}
-                            ${generateBlockDealsHtml()}
-                        </div>
+                    <div class="text-right">
+                      ${generateTechnicalTriggers()}
+                      <div class="text-base mt-1 font-semibold ${company.weeklyChange.includes('+') ? 'text-green-600' : 'text-red-600'}">${company.weeklyClose}</div>
                     </div>
+                  </div>
                 </div>
+                <div class="p-4">
+                  <div class="space-y-4">
+                    ${generateInsightsHtml()}
+                    ${generateAnalystReportsHtml()}
+                    ${generateNewsHtml()}
+                    ${generateBlockDealsHtml()}
+                  </div>
+                </div>
+              </div>
             `;
         }).join('');
     };
@@ -429,8 +491,8 @@ const generateHtml = (config) => {
                 <div class="bg-white w-full relative">
                     <div class="px-4">
                         ${headerHtml}
-                        <section class="mb-8 avoid-break">
-                            <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Market Overview</h2>
+                        ${config.companies.length ? `<section class="mb-8 avoid-break">
+                            <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Watchlist Overview</h2>
                             <div class="rounded-xl border bg-card text-card-foreground">
                                 <div class="relative w-full overflow-auto">
                                     <table class="w-full caption-bottom text-sm">
@@ -448,7 +510,7 @@ const generateHtml = (config) => {
                                     </table>
                                 </div>
                             </div>
-                        </section>
+                        </section>` : '<section class="mb-8 avoid-break"><h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Watchlist Overview</h2><div class="rounded-xl border bg-card text-card-foreground"><div class="p-6 text-center">No companies in your watchlist</div></div></section>'}
                         ${generateGeneralInsights()}
                         ${generateGeneralAnalystReports()}
                         <section>

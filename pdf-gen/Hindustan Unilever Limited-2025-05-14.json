@@ -1,0 +1,43 @@
+[
+  {
+    "heading": "Earnings and Growth Outlook",
+    "html_bullets": [
+      {
+        "point": "Hindustan Unilever is focusing on improving <b>volume growth</b> and has indicated a willingness to reduce <b>margins</b> to enhance long-term consumer franchise health, despite current pressures on <b>earnings</b>.",
+        "sentiment": "positive"
+      },
+      {
+        "point": "Hindustan Unilever reported <b>stronger-than-expected earnings</b> and forecasted a pick-up in demand among <b>urban consumers</b>, with CEO Rohit Jawa anticipating gradual improvement in demand conditions over the next fiscal year.",
+        "sentiment": "positive"
+      }
+    ],
+    "links": [
+      "https://economictimes.indiatimes.com/markets/expert-view/largecaps-still-offer-margin-of-safety-amid-broader-re-rating-harish-krishnan/articleshow/121158253.cms",
+      "https://www.business-standard.com/markets/news/stronger-than-expected-earnings-may-boost-india-stock-rally-further-125050800200_1.html"
+    ]
+  },
+  {
+    "heading": "Competitive Landscape",
+    "html_bullets": [
+      {
+        "point": "Hindustan Unilever is anticipated to face heightened competition from increased imports of <b>affordable beauty products</b> following the India-UK <b>free trade agreement</b>.",
+        "sentiment": "negative"
+      }
+    ],
+    "links": [
+      "https://economictimes.indiatimes.com/industry/cons-products/fashion-/-cosmetics-/-jewellery/uk-glam-hits-desi-aisles-british-beauty-brands-set-to-glam-up-indian-market-as-nykaa-tira-prep-for-the-glow/articleshow/120974946.cms"
+    ]
+  },
+  {
+    "heading": "Rural Demand and Consumption Trends",
+    "html_bullets": [
+      {
+        "point": "HUL's managing director noted a robust demand in <b>rural areas</b> and expressed optimism about future consumption growth, particularly with expectations of a <b>good monsoon</b> and <b>crop yield</b>.",
+        "sentiment": "positive"
+      }
+    ],
+    "links": [
+      "https://economictimes.indiatimes.com/industry/cons-products/fmcg/less-to-spend-india-buys-less-of-daily-needs/articleshow/120974915.cms"
+    ]
+  }
+]

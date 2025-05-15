@@ -1,0 +1,36 @@
+[
+  {
+    "heading": "Q4 FY25 Earnings Announcement",
+    "html_bullets": [
+      {
+        "point": "Tata Power is set to announce its Q4FY25 results today, with shares having increased by over <b>1.3%</b> prior to the results release.",
+        "sentiment": "neutral"
+      },
+      {
+        "point": "Tata Power's revenues are projected to grow by <b>5%</b> to <b>Rs 17,107 crore</b> for Q4FY25, with net profit expected to remain flat at <b>Rs 903 crore</b>, supported by its renewable energy portfolio and contained losses at Mundra.",
+        "sentiment": "neutral"
+      },
+      {
+        "point": "Tata Power is scheduled to release its Q4FY25 earnings report today, <b>May 14</b>.",
+        "sentiment": "neutral"
+      }
+    ],
+    "links": [
+      "https://www.moneycontrol.com/news/business/earnings/q4-results-2025-live-updates-hal-eicher-motors-tata-power-shree-cements-lupin-muthoot-finance-jubliant-foodworks-q4-earnings-share-price-may-14-liveblog-13024360.html",
+      "https://economictimes.indiatimes.com/markets/stocks/earnings/q4-results-today-tata-motors-airtel-among-126-companies-to-announce-earnings-on-wednesday/articleshow/121150410.cms",
+      "https://www.livemint.com/market/stock-market-news/q4-results-today-may-14-tata-power-eicher-motors-lupin-shree-cements-muthoot-finance-apollo-tyres-berger-paints-jubilant-11747184968203.html"
+    ]
+  },
+  {
+    "heading": "Electric Vehicle Charging Infrastructure",
+    "html_bullets": [
+      {
+        "point": "Tata Power has established a robust charging infrastructure to support the growing demand for electric vehicles, providing <b>home</b>, <b>community</b>, and <b>public charging solutions</b>.",
+        "sentiment": "positive"
+      }
+    ],
+    "links": [
+      "https://economictimes.indiatimes.com/industry/auto/auto-news/accelerating-towards-tomorrow-indias-electric-vehicle-revolution/articleshow/121139371.cms"
+    ]
+  }
+]

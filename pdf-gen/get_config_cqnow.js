@@ -367,7 +367,7 @@ async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, sup
         name: companyInfo.name,
         symbol,
         ISIN: companyInfo.ISIN,
-        icon: `https://images.5paisa.com/MarketIcons/${symbol}.png?height=30`,
+        icon: `https://images.dhan.co/symbol/${symbol}.png`,
         weeklyClose: `₹${currentPrice.toFixed(2)}`,
         weeklyChange: `${weeklyChange >= 0 ? '+' : ''}${weeklyChange.toFixed(1)}%`,
         ytdChange: `${ytdChange >= 0 ? '+' : ''}${ytdChange.toFixed(1)}%`,

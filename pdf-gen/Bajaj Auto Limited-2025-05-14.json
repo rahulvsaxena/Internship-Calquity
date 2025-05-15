@@ -1,0 +1,30 @@
+[
+  {
+    "heading": "Q4 FY25 Results Conference Call",
+    "html_bullets": [
+      {
+        "point": "Bajaj Auto Limited will hold a <b>conference call</b> for analysts and institutional investors on <b>May 29, 2025</b>, at <b>07:00 PM IST</b> to discuss its <b>Q4 FY25 results</b>. Details for participation are provided in the announcement.",
+        "sentiment": "positive"
+      }
+    ],
+    "links": [
+      "https://nsearchives.nseindia.com/corporate/lkwalimbe_bajajauto_co_in_13052025120552_SE_Intimation_-_Earnings_Call_Q4_FY25.pdf"
+    ]
+  },
+  {
+    "heading": "Electric Vehicle Sales Performance",
+    "html_bullets": [
+      {
+        "point": "Bajaj Auto reported a <b>17.6% decline</b> in electric two-wheeler (<b>e2W</b>) sales in April, attributed to the <b>subsidy reduction</b>. This contributed to the overall downturn in the segment.",
+        "sentiment": "negative"
+      },
+      {
+        "point": "Despite challenges in the e2W segment, Bajaj Auto recorded a <b>4.1% growth</b> in electric three-wheeler (<b>e3W</b>) sales in April.",
+        "sentiment": "positive"
+      }
+    ],
+    "links": [
+      "https://www.business-standard.com/industry/auto/electric-vehicle-sales-drop-17-in-april-e2w-suffer-fada-data-125050601315_1.html"
+    ]
+  }
+]

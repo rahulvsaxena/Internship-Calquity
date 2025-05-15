@@ -1,0 +1,63 @@
+[
+  {
+    "heading": "Market Rally and Investor Sentiment",
+    "html_bullets": [
+      {
+        "point": "The <b>India-Pakistan ceasefire</b> is expected to trigger a rally in the Indian stock market, with Eternal identified as a <b>digital stock</b> with strong prospects due to anticipated <b>FII investments</b>.",
+        "sentiment": "positive"
+      },
+      {
+        "point": "Eternal attracted over <b>1 million new retail investors</b> in Q4, despite a drop in its share prices, showcasing strong investor interest.",
+        "sentiment": "positive"
+      },
+      {
+        "point": "Eternal Ltd. saw <b>HNI buying worth Rs 248 crore</b>, even as its stock price declined by over <b>27%</b>, indicating confidence among high-net-worth individuals.",
+        "sentiment": "positive"
+      }
+    ],
+    "links": [
+      "https://www.livemint.com/market/stock-market-news/indiapakistan-ceasefire-can-trigger-a-rally-in-indian-stock-market-11747018905828.html",
+      "https://www.livemint.com/market/shareholding-moves-new-investors-cdsl-jio-financial-services-tata-motors-eternal-hdfc-bank-bajaj-finance-nhpc-11746938770070.html",
+      "https://economictimes.indiatimes.com/markets/stocks/news/swiggy-eternal-jio-financial-allure-hni-investors-even-as-nykaa-premier-energies-lose-charm/articleshow/120952027.cms"
+    ]
+  },
+  {
+    "heading": "Financial Performance and Earnings",
+    "html_bullets": [
+      {
+        "point": "Eternal reported a <b>profit of Rs 39 crore</b> in Q4FY25, down from <b>Rs 175 crore</b> a year earlier, while revenues rose to <b>Rs 6,201 crore</b> from <b>Rs 3,797 crore</b> in FY24.",
+        "sentiment": "negative"
+      },
+      {
+        "point": "Eternal Limited's Q4FY25 earnings conference call highlighted <b>margin pressures</b>, <b>competition in quick commerce</b>, and challenges in achieving growth targets due to market dynamics.",
+        "sentiment": "neutral"
+      },
+      {
+        "point": "Motilal Oswal's research report indicates Eternal's <b>4QFY25 revenues of INR58 billion</b>, up <b>8% QoQ</b>, driven by Blinkit, and maintains a <b>BUY rating</b> with a target price of <b>Rs 260</b>.",
+        "sentiment": "positive"
+      }
+    ],
+    "links": [
+      "https://www.livemint.com/companies/company-results/swiggys-instamart-losses-to-stabalize-after-cos-overall-q4-losses-double-11746799423646.html",
+      "https://nsearchives.nseindia.com/corporate/ZOMATO_08052025123356_SignedTranscript2025.pdf",
+      "https://www.moneycontrol.com/news/business/stocks/buy-eternal-target-of-rs-260-motilal-oswal-13011489.html"
+    ]
+  },
+  {
+    "heading": "Brand Strength and Market Position",
+    "html_bullets": [
+      {
+        "point": "Eternal (formerly Zomato) is a leading brand in <b>food delivery</b> among Gen Z, showcasing a strong connection with this demographic's ordering preferences.",
+        "sentiment": "positive"
+      },
+      {
+        "point": "Zomato has been highlighted as a breakout success for Info Edge, contributing significantly to its investment returns, with a combined market capitalization exceeding <b>Rs 2.5 lakh crore</b>.",
+        "sentiment": "positive"
+      }
+    ],
+    "links": [
+      "https://economictimes.indiatimes.com/industry/services/advertising/et-snapchat-gen-z-index-how-indias-gen-zers-live-work-and-spend-money/articleshow/120890885.cms",
+      "https://www.moneycontrol.com/news/business/startup/info-edge-sitting-on-nearly-10x-gains-by-betting-rs-3-959-crore-on-zomato-policybazaar-naukri-others-13015595.html"
+    ]
+  }
+]
