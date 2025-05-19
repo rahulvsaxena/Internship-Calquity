@@ -40,6 +40,15 @@
  */
 
 /**
+ * @typedef {Object} HistoricalData
+ * @property {string} date
+ * @property {number} open
+ * @property {number} high
+ * @property {number} low
+ * @property {number} close
+ */
+
+/**
  * @typedef {Object} Company
  * @property {string} name
  * @property {string} symbol
@@ -54,6 +63,7 @@
  * @property {Insight[]} insights
  * @property {AnalystReport[]} analystReports
  * @property {string[]} blockDeals
+ * @property {HistoricalData[]} historicalData
  */
 
 /**
@@ -78,11 +88,17 @@
  * @returns {string} The generated HTML string
  */
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import getFinancialConfig from './get_config_cqnow.js';
-import path from 'path';
+import yahooFinance from 'yahoo-finance2';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const generateHtml = (config) => {
     // Helper to generate a pastel color from the symbol
     function getPastelColor(str) {
@@ -141,16 +157,16 @@ const generateHtml = (config) => {
         const ytdChangeColor = company.ytdChange.includes('+') ? "text-green-600" : "text-red-600";
 
         const logoHtml = company.icon && company.icon.startsWith('http')
-            ? `<img src="${company.icon}" class="h-10 w-10 rounded-full object-cover">`
+            ? `<img src="${company.icon}" class="h-6 w-6 rounded-full object-cover">`
             : `<div class="rounded-full flex items-center justify-center">
                 <div class="rounded-full flex items-center justify-center"
                     style="
-                      width: 32px; height: 32px;
+                      width: 24px; height: 24px;
                       background: ${getPastelColor(company.symbol)};
                       color: ${getDarkerColor(company.symbol)};
                       font-family: 'Inter', sans-serif;
                       font-weight: 700;
-                      font-size: 14px;
+                      font-size: 12px;
                     ">
                     ${company.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
                 </div>
@@ -249,16 +265,26 @@ const generateHtml = (config) => {
                 return '';
             }
 
+            // Get the chart image path
+            const chartImagePath = path.join(__dirname, 'historical_data', `${company.symbol.toLowerCase()}_chart.png`);
+            const chartImageHtml = fs.existsSync(chartImagePath) 
+                ? `<div class="w-full mb-4">
+                    <img src="data:image/png;base64,${fs.readFileSync(chartImagePath).toString('base64')}" 
+                         alt="${company.name} Price Chart" 
+                         class="w-full h-auto rounded-lg shadow-sm" />
+                   </div>`
+                : '';
+
             const keyMetricsHtml = company.keyMetrics && Object.keys(company.keyMetrics).length ? `
-              <div class="grid grid-cols-${Object.keys(company.keyMetrics).length} gap-4 mb-4 p-3 rounded-lg justify-center avoid-break key-metric">
-                  ${Object.entries(company.keyMetrics).map(([k, v]) => `
-                      <div class="flex flex-col justify-center flex-1 gap-2 p-2 bg-secondary rounded-md">
-                          <p class="text-sm text-muted-foreground">${k.replace("_", " ")}</p>
-                          <p class="font-semibold">${v}</p>
-                      </div>
-                  `).join('')}
-              </div>
-          ` : '';
+                <div class="grid grid-cols-${Object.keys(company.keyMetrics).length} gap-4 mb-4 p-3 rounded-lg justify-center avoid-break key-metric">
+                    ${Object.entries(company.keyMetrics).map(([k, v]) => `
+                        <div class="flex flex-col justify-center flex-1 gap-2 p-2 bg-secondary rounded-md">
+                            <p class="text-sm text-muted-foreground">${k.replace("_", " ")}</p>
+                            <p class="font-semibold">${v}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '';
 
             const generateTechnicalTriggers = () => {
                 if (!company.technicalSignals || !Object.keys(company.technicalSignals).length) return '';
@@ -462,6 +488,7 @@ const generateHtml = (config) => {
                 </div>
                 <div class="p-4">
                   <div class="space-y-4">
+                    ${chartImageHtml}
                     ${generateInsightsHtml()}
                     ${generateAnalystReportsHtml()}
                     ${generateNewsHtml()}
@@ -529,8 +556,117 @@ const generateHtml = (config) => {
     `.trim();
 };
 
+// Helper function to format date as YYYY-MM-DD
+const formatDate = (date) => {
+    return date.toISOString().split('T')[0];
+};
 
-async function generateCleanedHtml(userId, brokerId, brokerLogo) {
+// Helper function to get date 30 days ago
+const getDate30DaysAgo = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date;
+};
+
+const saveHistoricalDataToFile = async (companies) => {
+    try {
+        // Use absolute path for the data directory
+        const dataDir = path.join(__dirname, 'historical_data');
+        console.log('Attempting to create directory at:', dataDir);
+        
+        if (!fs.existsSync(dataDir)) {
+            try {
+                fs.mkdirSync(dataDir, { recursive: true });
+                console.log('Created directory:', dataDir);
+            } catch (mkdirError) {
+                console.error('Error creating directory:', mkdirError);
+                // Try alternative location
+                const altDataDir = path.join(process.cwd(), 'historical_data');
+                console.log('Trying alternative directory:', altDataDir);
+                fs.mkdirSync(altDataDir, { recursive: true });
+                console.log('Created alternative directory:', altDataDir);
+            }
+        } else {
+            console.log('Directory already exists:', dataDir);
+        }
+
+        // Create an object to store all companies' data
+        const allCompaniesData = {};
+
+        // Get date range for last 30 days
+        const endDate = new Date();
+        const startDate = getDate30DaysAgo();
+
+        // Fetch and store data for each company
+        for (const company of companies) {
+            try {
+                console.log(`Fetching data for ${company.symbol}...`);
+                
+                // Add .NS suffix for Indian stocks
+                const symbol = company.symbol.includes('.') ? company.symbol : `${company.symbol}.NS`;
+                
+                const queryOptions = {
+                    period1: formatDate(startDate),
+                    period2: formatDate(endDate),
+                    interval: '1d'
+                };
+
+                const data = await yahooFinance.historical(symbol, queryOptions);
+                console.log(`Successfully fetched ${data.length} days of data for ${company.symbol}`);
+
+                allCompaniesData[company.symbol] = {
+                    name: company.name,
+                    data: data.map(row => ({
+                        date: formatDate(new Date(row.date)),
+                        open: row.open,
+                        high: row.high,
+                        low: row.low,
+                        close: row.close,
+                        volume: row.volume
+                    }))
+                };
+            } catch (error) {
+                console.error(`Error fetching historical data for ${company.symbol}:`, error);
+            }
+        }
+
+        // Try both possible file paths
+        const filePaths = [
+            path.join(dataDir, 'all_companies_historical_data.json'),
+            path.join(process.cwd(), 'historical_data', 'all_companies_historical_data.json')
+        ];
+
+        let fileWritten = false;
+        for (const filePath of filePaths) {
+            try {
+                console.log('Attempting to write file at:', filePath);
+                fs.writeFileSync(filePath, JSON.stringify(allCompaniesData, null, 2));
+                console.log('Successfully wrote data to file:', filePath);
+                
+                // Verify file was created
+                if (fs.existsSync(filePath)) {
+                    const stats = fs.statSync(filePath);
+                    console.log('File size:', stats.size, 'bytes');
+                    fileWritten = true;
+                    break;
+                }
+            } catch (writeError) {
+                console.error(`Failed to write to ${filePath}:`, writeError);
+            }
+        }
+
+        if (!fileWritten) {
+            console.error('Failed to write file to any location');
+        }
+
+        return fileWritten;
+    } catch (error) {
+        console.error('Error in saveHistoricalDataToFile:', error);
+        return false;
+    }
+};
+
+const generateCleanedHtml = async (userId, brokerId, brokerLogo) => {
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
@@ -541,18 +677,56 @@ async function generateCleanedHtml(userId, brokerId, brokerLogo) {
             brokerName: null
         };
     }
+
+    // Save historical data to a single file for testing
+    const dataSaved = await saveHistoricalDataToFile(config.companies);
+    
+    if (dataSaved) {
+        // Import and call plot_stock.js to generate charts
+        const { generateAllCharts } = await import('./plot_stock.js');
+        await generateAllCharts();
+    }
+
+    // Fetch historical data for each company
+    const endDate = new Date();
+    const startDate = getDate30DaysAgo();
+
+    for (const company of config.companies) {
+        try {
+            // Add .NS suffix for Indian stocks
+            const symbol = company.symbol.includes('.') ? company.symbol : `${company.symbol}.NS`;
+            
+            const queryOptions = {
+                period1: formatDate(startDate),
+                period2: formatDate(endDate),
+                interval: '1d'
+            };
+
+            const data = await yahooFinance.historical(symbol, queryOptions);
+            company.historicalData = data.map(row => ({
+                date: formatDate(new Date(row.date)),
+                open: row.open,
+                high: row.high,
+                low: row.low,
+                close: row.close,
+                volume: row.volume
+            }));
+        } catch (error) {
+            console.error(`Error fetching historical data for ${company.symbol}:`, error);
+        }
+    }
+
     const htmlOutput = generateHtml(config);
 
     // Remove any backtick content
     const cleanedHtml = htmlOutput.replace(/`.*?`/g, '');
 
-    // Write the cleaned HTML to a file
-    // fs.writeFileSync('cleaned.html', cleanedHtml);
     return {
         html: cleanedHtml,
         brokerName: config.header.brokerName
     }
-}
+};
 
+export { saveHistoricalDataToFile };
 export default generateCleanedHtml;
 

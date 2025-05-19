@@ -6,6 +6,7 @@ import pandas as pd
 import json
 import numpy as np
 from metrics import get_stock_metrics, hit_52week_high, hit_52week_low, is_rsi_overbought, is_rsi_oversold, is_macd_bullish_crossover, is_macd_bearish_crossover
+import os
 
 
 class NewsItem(TypedDict):
@@ -64,7 +65,7 @@ class Config(TypedDict):
     generalInsights: List[Insight]
     generalAnalystReports: List[AnalystReport]
 
-def get_financial_config(email_id: str, broker_id: int, supabase_url: str, supabase_key: str) -> Config:
+def get_financial_config(email: str, report_id: int, supabase_url: str, supabase_key: str) -> Config:
     # Initialize Supabase client
     supabase: Client = create_client(supabase_url, supabase_key)
     
@@ -75,12 +76,12 @@ def get_financial_config(email_id: str, broker_id: int, supabase_url: str, supab
     # Get broker settings
     settings_query = supabase.table('weekly_report_settings') \
         .select('*') \
-        .eq('broker_id', broker_id) \
+        .eq('broker_id', report_id) \
         .single() \
         .execute()
     
     if not settings_query.data:
-        raise ValueError(f"No settings found for broker_id {broker_id}")
+        raise ValueError(f"No settings found for broker_id {report_id}")
     
     settings = settings_query.data
     selected_categories = list(map(lambda x: x.strip(), settings['selected_categories'].split(','))) if settings['selected_categories'] else []
@@ -89,7 +90,7 @@ def get_financial_config(email_id: str, broker_id: int, supabase_url: str, supab
     # Get technical trigger settings
     tech_settings_query = supabase.table('technical_trigger_settings') \
         .select('*') \
-        .eq('broker_id', broker_id) \
+        .eq('broker_id', report_id) \
         .single() \
         .execute()
     
@@ -98,7 +99,7 @@ def get_financial_config(email_id: str, broker_id: int, supabase_url: str, supab
     # Get broker info
     broker_query = supabase.table('brokers') \
         .select('name') \
-        .eq('id', broker_id) \
+        .eq('id', report_id) \
         .single() \
         .execute()
     
@@ -108,12 +109,12 @@ def get_financial_config(email_id: str, broker_id: int, supabase_url: str, supab
     # Get Client data
     companies_query = supabase.table('clients') \
         .select('id, name') \
-        .eq('email', email_id) \
+        .eq('email', email) \
         .single() \
         .execute()
         
     if not companies_query.data:
-        raise ValueError(f"Client not found for email {email_id}")
+        raise ValueError(f"Client not found for email {email}")
     
 
     # Create header
@@ -231,15 +232,21 @@ def get_financial_config(email_id: str, broker_id: int, supabase_url: str, supab
                 # Get key metrics based on selected metrics
                 key_metrics = {}
                 metrics_data = get_stock_metrics(symbol)
+                # Always include these four metrics
+                key_metrics['P/E Ratio'] = metrics_data.get('P_E_Ratio', 'N/A')
+                key_metrics['P/B Ratio'] = metrics_data.get('P_B_Ratio', 'N/A')
+                key_metrics['50 DMA'] = metrics_data.get('Price_to_50DMA', 'N/A')
+                key_metrics['200 DMA'] = metrics_data.get('Price_to_200DMA', 'N/A')
+                # Optionally add other selected metrics
                 for metric in selected_metrics:
                     metric_key = metric.replace(" ", "_").replace("/", "_")
-                    if metric_key in metrics_data:
+                    if metric_key in metrics_data and metric not in key_metrics:
                         key_metrics[metric] = metrics_data[metric_key] if metrics_data[metric_key] is not None and not np.isnan(metrics_data[metric_key]) else 'N/A'
                 
                 # Get insights for the company
                 insights_query = supabase.table('weekly_report_insights') \
                     .select('title, description') \
-                    .eq('broker_id', broker_id) \
+                    .eq('broker_id', report_id) \
                     .eq('company_id', company_info['id']) \
                     .eq('week_window', 'current') \
                     .execute()
@@ -255,7 +262,7 @@ def get_financial_config(email_id: str, broker_id: int, supabase_url: str, supab
                 # Get research reports
                 reports_query = supabase.table('research_reports') \
                     .select('title, file_url') \
-                    .eq('broker_id', broker_id) \
+                    .eq('broker_id', report_id) \
                     .eq('company_id', company_info['id']) \
                     .order('created_at', desc=True) \
                     .execute()
@@ -288,7 +295,7 @@ def get_financial_config(email_id: str, broker_id: int, supabase_url: str, supab
     # Get general insights
     general_insights_query = supabase.table('weekly_report_insights') \
         .select('title, description') \
-        .eq('broker_id', broker_id) \
+        .eq('broker_id', report_id) \
         .is_('company_id', None) \
         .eq('week_window', 'current') \
         .execute()
@@ -304,7 +311,7 @@ def get_financial_config(email_id: str, broker_id: int, supabase_url: str, supab
     # Get general research reports
     general_reports_query = supabase.table('research_reports') \
         .select('title, file_url') \
-        .eq('broker_id', broker_id) \
+        .eq('broker_id', report_id) \
         .is_('company_id', None) \
         .order('created_at', desc=True) \
         .execute()
@@ -331,8 +338,8 @@ def get_financial_config(email_id: str, broker_id: int, supabase_url: str, supab
 # SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoamdkbHlva2t6dm56aXduY3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA2NTg1MzgsImV4cCI6MjA0NjIzNDUzOH0.ZCqkjrb9xO32G2-yOybXAgx2MLYl16rrZUWT-VSdn-Y"
 
 # config = get_financial_config(
-#     email_id="pratham@example.com",
-#     broker_id=1,
+#     email="pratham@example.com",
+#     report_id=1,
 #     supabase_url=SUPABASE_URL,
 #     supabase_key=SUPABASE_KEY
 # )

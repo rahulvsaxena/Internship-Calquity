@@ -1,6 +1,8 @@
 from typing import List, TypedDict, Optional
 import json
 from get_config import get_financial_config
+import os
+from dotenv import load_dotenv
 
 class NewsItem(TypedDict):
     sentiment: str
@@ -352,7 +354,7 @@ def generate_html(config: Config) -> str:
                     'positive': ('green', '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"     stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>'),  
                     'neutral': ('gray', '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"     stroke-linecap="round" stroke-linejoin="round" class="lucide gray lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>'),  
                     'negative': ('red', '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"     stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>'),  
-                }[news_item['sentiment']]  
+                }[news_item['sentiment']]
                 news_items += f"""  
                     <li class="flex items-start gap-2 text-left">  
                         <div class="inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold border-transparent bg-{sentiment_color[0]}-100 text-{sentiment_color[0]}-700 mt-1 shrink-0">  
@@ -427,9 +429,29 @@ def generate_html(config: Config) -> str:
             <div class="rounded-xl border bg-card text-card-foreground avoid-break">  
                 <div class="flex flex-col space-y-1.5 p-6 bg-secondary rounded-t-xl company-update">  
                     <div class="flex items-center justify-between">  
-                        <div class="flex items-center gap-2 font-semibold text-xl">  
-                            <img src="{company['icon']}" class="h-6 rounded-sm">{company['name']} ({company['symbol']})  
-                        </div>  
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center gap-2 font-semibold text-xl">  
+                                <img src="{company['icon']}" class="h-6 rounded-sm">{company['name']} ({company['symbol']})  
+                            </div>
+                            <div class="flex gap-8 mt-2">
+                                <div class="flex flex-col items-center">
+                                    <span class="text-sm text-muted-foreground">P/E Ratio</span>
+                                    <span class="font-semibold text-base">{company.get('keyMetrics', {}).get('P_E_Ratio', 'N/A')}</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-sm text-muted-foreground">P/B Ratio</span>
+                                    <span class="font-semibold text-base">{company.get('keyMetrics', {}).get('P_B_Ratio', 'N/A')}</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-sm text-muted-foreground">50 DMA</span>
+                                    <span class="font-semibold text-base">{company.get('keyMetrics', {}).get('Price_to_50DMA', 'N/A')}</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-sm text-muted-foreground">200 DMA</span>
+                                    <span class="font-semibold text-base">{company.get('keyMetrics', {}).get('Price_to_200DMA', 'N/A')}</span>
+                                </div>
+                            </div>
+                        </div>
                         <div>
                         {technical_triggers_html}  
                         <div class="text-base mt-1 font-semibold {'text-green-600' if '+' in company['weeklyChange'] else 'text-red-600'}">{company['weeklyClose']}</div>  
@@ -437,7 +459,6 @@ def generate_html(config: Config) -> str:
                     </div>  
                 </div>  
                 <div class="p-4">  
-                    {key_metrics_html}  
                     <div class="space-y-4">  
                         {insights_html}  
                         {analyst_reports_html}  
