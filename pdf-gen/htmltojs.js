@@ -280,6 +280,51 @@ async function generateAndSendPdf(userId, brokerId, brokerLogo, phoneNumber = nu
 
   // Execute the conversion
   await convertHtmlToPdf(htmlSafe, `Weekly Report-${weekEndingStr}-${clientData.email}-${brokerId}.pdf`, brokerName);
+  
+  // Clean up all generated files after PDF generation but before sending
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const { fileURLToPath } = await import('url');
+    
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    
+    // Path to historical_data folder
+    const historicalDataDir = path.join(__dirname, 'historical_data');
+    
+    if (fs.existsSync(historicalDataDir)) {
+      // Delete all files in historical_data directory
+      const files = fs.readdirSync(historicalDataDir);
+      for (const file of files) {
+        const filePath = path.join(historicalDataDir, file);
+        fs.unlinkSync(filePath);
+        console.log(`Deleted: ${filePath}`);
+      }
+      
+      // Delete the directory itself
+      fs.rmdirSync(historicalDataDir);
+      console.log(`Deleted directory: ${historicalDataDir}`);
+    }
+    
+    // Delete any JSON files in the root directory (company data files)
+    const rootFiles = fs.readdirSync(__dirname);
+    for (const file of rootFiles) {
+      // Only delete company-specific JSON files using regex pattern
+      // Pattern matches: "Company Name-YYYY-MM-DD.json"
+      const companyFilePattern = /^[A-Za-z\s]+-\d{4}-\d{2}-\d{2}\.json$/;
+      if (file.endsWith('.json') && companyFilePattern.test(file)) {
+        const filePath = path.join(__dirname, file);
+        fs.unlinkSync(filePath);
+        console.log(`Deleted company file: ${filePath}`);
+      }
+    }
+    
+    console.log('All temporary files cleaned up successfully');
+  } catch (error) {
+    console.error('Error during cleanup:', error);
+  }
+  
   const pdfName = `Weekly Report-${clientData.name || ''}-${weekEndingStr}.pdf`
   await sendEmail(emailId || clientData.email, `Your Personalized Weekly Report for the Week ending on ${weekEndingStr} by CQNow`, "Please find attached your personalized weekly report.\n\nBest regards,\nCQNow",`Weekly Report-${weekEndingStr}-${clientData.email}-${brokerId}.pdf`, pdfName);
   await sendToWhatsapp(`Weekly Report-${weekEndingStr}-${clientData.email}-${brokerId}.pdf`, phoneNumber || phone, weekEndingStr, clientData.name || '');

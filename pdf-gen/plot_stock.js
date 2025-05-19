@@ -6,6 +6,40 @@ import puppeteer from 'puppeteer';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Helper function to interpolate missing data points
+const interpolateData = (dates, values) => {
+    const interpolated = [];
+    for (let i = 0; i < dates.length; i++) {
+        if (i > 0) {
+            const prevDate = new Date(dates[i - 1]);
+            const currDate = new Date(dates[i]);
+            const daysDiff = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
+            
+            if (daysDiff > 1) {
+                // Interpolate missing days
+                for (let j = 1; j < daysDiff; j++) {
+                    const interpDate = new Date(prevDate);
+                    interpDate.setDate(prevDate.getDate() + j);
+                    
+                    // Linear interpolation
+                    const ratio = j / daysDiff;
+                    const interpValue = values[i - 1] + (values[i] - values[i - 1]) * ratio;
+                    
+                    interpolated.push({
+                        date: interpDate.toISOString().split('T')[0],
+                        value: interpValue
+                    });
+                }
+            }
+        }
+        interpolated.push({
+            date: dates[i],
+            value: values[i]
+        });
+    }
+    return interpolated;
+};
+
 const generateStockChart = async (companySymbol, companyData) => {
     try {
         // Prepare data for plotting
@@ -15,13 +49,19 @@ const generateStockChart = async (companySymbol, companyData) => {
         const low = companyData.data.map(d => d.low);
         const close = companyData.data.map(d => d.close);
 
-        // Create candlestick chart
+        // Interpolate missing data points
+        const interpolatedOpen = interpolateData(dates, open);
+        const interpolatedHigh = interpolateData(dates, high);
+        const interpolatedLow = interpolateData(dates, low);
+        const interpolatedClose = interpolateData(dates, close);
+
+        // Create candlestick chart with interpolated data
         const candlestick = {
-            x: dates,
-            open: open,
-            high: high,
-            low: low,
-            close: close,
+            x: interpolatedOpen.map(d => d.date),
+            open: interpolatedOpen.map(d => d.value),
+            high: interpolatedHigh.map(d => d.value),
+            low: interpolatedLow.map(d => d.value),
+            close: interpolatedClose.map(d => d.value),
             type: 'candlestick',
             increasing: {line: {color: 'green'}},
             decreasing: {line: {color: 'red'}}
@@ -38,13 +78,13 @@ const generateStockChart = async (companySymbol, companyData) => {
                         color: '#000',
                         weight: 'bold'
                     },
-                    standoff: 10 // Adds space between the axis and the title
+                    standoff: 10
                 },
                 autorange: true,
                 fixedrange: false,
                 gridwidth: 2,
                 gridcolor: 'rgba(200, 200, 200, 0.8)',
-                automargin: true // This helps ensure there's enough space for the label
+                automargin: true
             },
             xaxis: {
                 title: {
@@ -61,13 +101,16 @@ const generateStockChart = async (companySymbol, companyData) => {
                     visible: false
                 },
                 gridwidth: 2,
-                gridcolor: 'rgba(200, 200, 200, 0.8)'
+                gridcolor: 'rgba(200, 200, 200, 0.8)',
+                // Change date format to dd-mm-yy
+                tickformat: '%d-%m-%y',
+                tickangle: -45
             },
             margin: {
-                l: 70, // Increased left margin to give more space for y-axis label
+                l: 70,
                 r: 20,
                 t: 20,
-                b: 60  // Increased bottom margin for x-axis label
+                b: 60
             },
             paper_bgcolor: 'white',
             plot_bgcolor: 'white'
@@ -84,10 +127,9 @@ const generateStockChart = async (companySymbol, companyData) => {
         body { margin: 0; padding: 0; }
         #chart {
             width: 100%;
-            height: 60vh; /* Reduced from 100vh to make the chart shorter */
+            height: 60vh;
             background-color: white;
         }
-        /* Add extra styling to ensure axis titles are visible */
         .ytitle, .xtitle {
             font-size: 16px !important;
             font-weight: bold !important;
@@ -100,7 +142,6 @@ const generateStockChart = async (companySymbol, companyData) => {
         const data = ${JSON.stringify([candlestick])};
         const layout = ${JSON.stringify(layout)};
         Plotly.newPlot('chart', data, layout).then(() => {
-            // Signal that the chart is ready
             window.chartReady = true;
         });
     </script>
@@ -115,10 +156,10 @@ const generateStockChart = async (companySymbol, companyData) => {
         });
         const page = await browser.newPage();
 
-        // Set viewport size - reduced height as requested
+        // Set viewport size
         await page.setViewport({
             width: 1200,
-            height: 700
+            height: 800
         });
 
         // Load the HTML file

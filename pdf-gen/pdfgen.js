@@ -93,13 +93,14 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import getFinancialConfig from './get_config_cqnow.js';
 import yahooFinance from 'yahoo-finance2';
+import fetch from 'node-fetch';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const generateHtml = (config) => {
+const generateHtml = async (config) => {
     // Helper to generate a pastel color from the symbol
     function getPastelColor(str) {
         let hash = 0;
@@ -120,9 +121,10 @@ const generateHtml = (config) => {
         return `hsl(${h}, 70%, 35%)`;
     }
 
+    //default header
     let headerHtml = `
       <header class="text-primary-foreground p-6 rounded-t-2xl mb-8 avoid-break" style="background-color: #3B697E;">
-          <div class="flex items-center gap-4">${config.header.logo}
+          <div class="flex items-center gap-4">
               <div>
                   <h1 class="text-3xl font-bold text-left">${config.header.title}</h1>
                   <p class="text-sm opacity-90 text-left">${config.header.date}</p>
@@ -131,10 +133,11 @@ const generateHtml = (config) => {
       </header>
   `;
 
-    if (config.header.logo.startsWith('http')) {
+    if (config.header.logo && config.header.logo.startsWith('http')) {
         headerHtml = `
       <header class="text-primary-foreground p-6 rounded-t-2xl mb-8 avoid-break" style="background-color: #3B697E;">
-            <div class="flex items-center gap-4"><img src=${config.header.logo} class="h-12 rounded-sm">
+            <div class="flex items-center gap-4">
+                <img src="${config.header.logo}" class="h-12 rounded-sm">
                 <div>
                     <h1 class="text-3xl font-bold text-left">${config.header.title}</h1>
                     <p class="text-sm opacity-90 text-left">${config.header.date}</p>
@@ -144,7 +147,29 @@ const generateHtml = (config) => {
       `;
     }
 
-    const marketOverviewRows = config.companies.map(company => {
+//for a specific broker use this custom header
+// let logoBase64 = '';
+// try {
+//     const logoPath = 'bcb1.png'; // Path to your logo file
+//     const logoData = fs.readFileSync(logoPath);
+//     logoBase64 = logoData.toString('base64');
+// } catch (error) {
+//     console.error('Error reading logo file:', error);
+// }
+// let headerHtml = `
+// <header class="p-3 rounded-t-2xl avoid-break" style="background-color: white;">
+// <div class="flex justify-between items-end mb-1">
+//     <img src="data:image/jpeg;base64,${logoBase64}" style="height: 70px;" class="rounded-sm">
+//     <div class="flex flex-col items-end">
+//         <h1 class="text-2xl text-black m-0">BCB Weekly</h1>
+//         <p class="text-sm opacity-90 text-black mt-1">${config.header.date}</p>
+//     </div>
+// </div>
+// <div class="border-b w-full" style="border-width: 1.5px; border-color: #0066A1;"></div>
+// </header>
+// `
+
+    const marketOverviewRows = await Promise.all(config.companies.map(async company => {
         const weeklyChangeIcon = company.weeklyChange.includes('+')
             ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>'
             : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>';
@@ -156,21 +181,35 @@ const generateHtml = (config) => {
 
         const ytdChangeColor = company.ytdChange.includes('+') ? "text-green-600" : "text-red-600";
 
-        const logoHtml = company.icon && company.icon.startsWith('http')
-            ? `<img src="${company.icon}" class="h-6 w-6 rounded-full object-cover">`
-            : `<div class="rounded-full flex items-center justify-center">
+        const getPastelLogoHtml = (symbol, name) => {
+            return `<div class="rounded-full flex items-center justify-center">
                 <div class="rounded-full flex items-center justify-center"
                     style="
                       width: 24px; height: 24px;
-                      background: ${getPastelColor(company.symbol)};
-                      color: ${getDarkerColor(company.symbol)};
+                      background: ${getPastelColor(symbol)};
+                      color: ${getDarkerColor(symbol)};
                       font-family: 'Inter', sans-serif;
                       font-weight: 700;
                       font-size: 12px;
                     ">
-                    ${company.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
+                    ${name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
                 </div>
             </div>`;
+        };
+
+        let logoHtml;
+        if (company.icon && company.icon.startsWith('http')) {
+            try {
+                const response = await fetch(company.icon);
+                logoHtml = response.status === 200 
+                    ? `<img src="${company.icon}" class="h-6 w-6 rounded-full object-cover">`
+                    : getPastelLogoHtml(company.symbol, company.name);
+            } catch (error) {
+                logoHtml = getPastelLogoHtml(company.symbol, company.name);
+            }
+        } else {
+            logoHtml = getPastelLogoHtml(company.symbol, company.name);
+        }
 
         return `
           <tr class="transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
@@ -189,7 +228,7 @@ const generateHtml = (config) => {
               </td>
           </tr>
       `;
-    }).join('');
+    }));
 
     const generateGeneralInsights = () => {
         if (!config.generalInsights?.length) return '';
@@ -243,11 +282,45 @@ const generateHtml = (config) => {
       `;
     };
 
-    const generateCompanyUpdates = () => {
-        return config.companies.map(company => {
-            const logoHtml = company.icon && company.icon.startsWith('http')
-                ? `<img src="${company.icon}" class="h-10 w-10 rounded-full object-cover">`
-                : `<div class="rounded-full flex items-center justify-center">
+    const generateCompanyUpdates = async () => {
+        const companyUpdates = await Promise.all(config.companies.map(async company => {
+            let logoHtml;
+            if (company.icon && company.icon.startsWith('http')) {
+                try {
+                    // Use the same approach as in the Watchlist Overview for consistency
+                    const response = await fetch(company.icon);
+                    logoHtml = response.status === 200 
+                        ? `<img src="${company.icon}" class="h-10 w-10 rounded-full object-cover">`
+                        : `<div class="rounded-full flex items-center justify-center">
+                            <div class="rounded-full flex items-center justify-center"
+                                style="
+                                  width: 32px; height: 32px;
+                                  background: ${getPastelColor(company.symbol)};
+                                  color: ${getDarkerColor(company.symbol)};
+                                  font-family: 'Inter', sans-serif;
+                                  font-weight: 700;
+                                  font-size: 14px;
+                                ">
+                                ${company.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
+                            </div>
+                          </div>`;
+                } catch (error) {
+                    logoHtml = `<div class="rounded-full flex items-center justify-center">
+                        <div class="rounded-full flex items-center justify-center"
+                            style="
+                              width: 32px; height: 32px;
+                              background: ${getPastelColor(company.symbol)};
+                              color: ${getDarkerColor(company.symbol)};
+                              font-family: 'Inter', sans-serif;
+                              font-weight: 700;
+                              font-size: 14px;
+                            ">
+                            ${company.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
+                        </div>
+                      </div>`;
+                }
+            } else {
+                logoHtml = `<div class="rounded-full flex items-center justify-center">
                     <div class="rounded-full flex items-center justify-center"
                         style="
                           width: 32px; height: 32px;
@@ -260,6 +333,7 @@ const generateHtml = (config) => {
                         ${company.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
                     </div>
                 </div>`;
+            }
 
             if (!company.news?.length) {
                 return '';
@@ -345,7 +419,7 @@ const generateHtml = (config) => {
                                     ${icon}
                                 </div>
                                 <span class="text-${color}-700 text-left">
-                                    ${bullet.point}
+                                    ${bullet.point.replace(/<\/?b>/g, '')}
                                 </span>
                             </li>
                         `;
@@ -369,14 +443,24 @@ const generateHtml = (config) => {
                         return ``;
                     };
             
-                    const linkBadges = section.links.map(link => {
-                        if (getSourceIdentifier(link) === ``) return ``;
-                        return `
-                        <a href="${link}" target="_blank" class="inline-flex items-center justify-center rounded-full border px-3 py-0.5 text-xs font-semibold border-transparent bg-gray-100 text-gray-700 shrink-0 mt-half">
-                            ${getSourceIdentifier(link)}
-                            Source ${section.links.indexOf(link) + 1}
-                        </a>
-                    `}).join(' ');
+                    const validLinkBadges = [];
+                    for (let i = 0; i < section.links.length; i++) {
+                        const link = section.links[i];
+                        const sourceIdentifier = getSourceIdentifier(link);
+                        if (sourceIdentifier) {  // Only add if there is a valid source identifier
+                            validLinkBadges.push(`
+                                <a href="${link}" target="_blank" class="inline-flex items-center justify-center rounded-full border px-3 py-0.5 text-xs font-semibold border-transparent bg-gray-100 text-gray-700 shrink-0 mt-half">
+                                    ${sourceIdentifier}
+                                    Source ${i + 1}
+                                </a>
+                            `);
+                        }
+                    }
+
+                    // Only add the container div if there are valid badges
+                    const linkBadgesHtml = validLinkBadges.length > 0 
+                        ? `<div class="grid grid-cols-6 gap-2 flex-wrap ml-8">${validLinkBadges.join('')}</div>`
+                        : '';
             
                     return `
                         <div class="mb-4">
@@ -384,9 +468,7 @@ const generateHtml = (config) => {
                             <ul class="mb-2 ml-8">
                                 ${bulletPoints}
                             </ul>
-                            <div class="grid grid-cols-6 gap-2 flex-wrap ml-8">
-                                ${linkBadges}
-                            </div>
+                            ${linkBadgesHtml}
                         </div>
                     `;
                 }).join('');
@@ -497,7 +579,9 @@ const generateHtml = (config) => {
                 </div>
               </div>
             `;
-        }).join('');
+        }));
+        
+        return companyUpdates.join('');
     };
 
     return `
@@ -532,7 +616,7 @@ const generateHtml = (config) => {
                                             </tr>
                                         </thead>
                                         <tbody class="[&_tr:last-child]:border-0">
-                                            ${marketOverviewRows}
+                                            ${(await Promise.all(marketOverviewRows)).join('')}
                                         </tbody>
                                     </table>
                                 </div>
@@ -543,7 +627,7 @@ const generateHtml = (config) => {
                         <section>
                             <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Company Updates</h2>
                             <div class="grid grid-cols-1 gap-6">
-                                ${generateCompanyUpdates()}
+                                ${await generateCompanyUpdates()}
                             </div>
                         </section>
                     </div>
@@ -716,7 +800,7 @@ const generateCleanedHtml = async (userId, brokerId, brokerLogo) => {
         }
     }
 
-    const htmlOutput = generateHtml(config);
+    const htmlOutput = await generateHtml(config);
 
     // Remove any backtick content
     const cleanedHtml = htmlOutput.replace(/`.*?`/g, '');
