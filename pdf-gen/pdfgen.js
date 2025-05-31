@@ -590,9 +590,13 @@ const generateHtml = async (config) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CQNowReport</title>
+    <title>${config.header.title}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         ${fs.readFileSync('styles.css', 'utf8')}
+        .page-break {
+            page-break-after: always;
+        }
     </style>
 </head>
 <body>
@@ -601,35 +605,43 @@ const generateHtml = async (config) => {
             <div class="max-w-7xl mx-auto">
                 <div class="bg-white w-full relative">
                     <div class="px-4">
-                        ${headerHtml}
-                        ${config.companies.length ? `<section class="mb-8 avoid-break">
-                            <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Watchlist Overview</h2>
-                            <div class="rounded-xl border bg-card text-card-foreground">
-                                <div class="relative w-full overflow-auto">
-                                    <table class="w-full caption-bottom text-sm">
-                                        <thead class="[&_tr]:border-b">
-                                            <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                                                <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Company</th>
-                                                <th class="h-10 px-2 align-middle font-medium text-muted-foreground text-center">Weekly Close</th>
-                                                <th class="h-10 px-2 align-middle font-medium text-muted-foreground text-center">Weekly</th>
-                                                <th class="h-10 px-2 align-middle font-medium text-muted-foreground text-center">YTD</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="[&_tr:last-child]:border-0">
-                                            ${(await Promise.all(marketOverviewRows)).join('')}
-                                        </tbody>
-                                    </table>
+                        <!-- First page with header -->
+                        <div class="page-break">
+                            ${headerHtml}
+                        </div>
+                        
+                        <!-- Main content -->
+                        <div class="space-y-8">
+                            ${config.companies && config.companies.length > 0 ? `
+                                <section class="mb-8 avoid-break">
+                                    <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Watchlist Overview</h2>
+                                    <div class="rounded-xl border bg-card text-card-foreground">
+                                        <div class="relative w-full overflow-auto">
+                                            <table class="w-full caption-bottom text-sm">
+                                                <thead class="[&_tr]:border-b">
+                                                    <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                                        <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Company</th>
+                                                        <th class="h-10 px-2 align-middle font-medium text-muted-foreground text-center">Weekly Close</th>
+                                                        <th class="h-10 px-2 align-middle font-medium text-muted-foreground text-center">Weekly</th>
+                                                        <th class="h-10 px-2 align-middle font-medium text-muted-foreground text-center">YTD</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="[&_tr:last-child]:border-0">
+                                                    ${(await Promise.all(marketOverviewRows)).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </section>` : '<section class="mb-8 avoid-break"><h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Watchlist Overview</h2><div class="rounded-xl border bg-card text-card-foreground"><div class="p-6 text-center">No companies in your watchlist</div></div></section>'}
+                            ${generateGeneralInsights()}
+                            ${generateGeneralAnalystReports()}
+                            <section>
+                                <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Company Updates</h2>
+                                <div class="grid grid-cols-1 gap-6">
+                                    ${await generateCompanyUpdates()}
                                 </div>
-                            </div>
-                        </section>` : '<section class="mb-8 avoid-break"><h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Watchlist Overview</h2><div class="rounded-xl border bg-card text-card-foreground"><div class="p-6 text-center">No companies in your watchlist</div></div></section>'}
-                        ${generateGeneralInsights()}
-                        ${generateGeneralAnalystReports()}
-                        <section>
-                            <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Company Updates</h2>
-                            <div class="grid grid-cols-1 gap-6">
-                                ${await generateCompanyUpdates()}
-                            </div>
-                        </section>
+                            </section>
+                        </div>
                     </div>
                 </div>
             </div>
