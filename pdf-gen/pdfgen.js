@@ -94,11 +94,17 @@ import dotenv from 'dotenv';
 import getFinancialConfig from './get_config_cqnow.js';
 import yahooFinance from 'yahoo-finance2';
 import fetch from 'node-fetch';
+import { generateStockChart } from './plot_stock.js';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const companyJsonDir = path.join(__dirname, 'company_json');
+if (!fs.existsSync(companyJsonDir)) {
+    fs.mkdirSync(companyJsonDir, { recursive: true });
+}
 
 const generateHtml = async (config) => {
     // Helper to generate a pastel color from the symbol
@@ -317,7 +323,7 @@ const generateHtml = async (config) => {
                             ">
                             ${company.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()}
                         </div>
-                      </div>`;
+                    </div>`;
                 }
             } else {
                 logoHtml = `<div class="rounded-full flex items-center justify-center">
@@ -584,6 +590,457 @@ const generateHtml = async (config) => {
         return companyUpdates.join('');
     };
 
+    // Portfolio vs Benchmark section
+    const portfolioChange = await getPortfolioWeeklyChange();
+    const niftyChange = await getBenchmarkWeeklyChange('^NSEI');
+    const sensexChange = await getBenchmarkWeeklyChange('^BSESN');
+    const nextNiftyChange = await getBenchmarkWeeklyChange('^NSMIDCP');
+    const portfolioTotalValue = getPortfolioTotalValue();
+
+    // Generate chart data
+    const chartData = {
+        labels: ['Your Portfolio', 'Nifty 50', 'Sensex', 'Next Nifty'],
+        datasets: [{
+            label: 'Change (%)',
+            data: [
+                Number(portfolioChange.toFixed(1)),
+                Number(niftyChange.toFixed(1)),
+                Number(sensexChange.toFixed(1)),
+                Number(nextNiftyChange.toFixed(1))
+            ],
+            backgroundColor: [
+                '#0A2463', // Deep navy for portfolio
+                '#1E40AF', // Blue-800
+                '#2563EB', // Blue-600
+                '#3B82F6', // Blue-500
+            ],
+            borderColor: 'rgba(255, 255, 255, 0.5)',
+            borderWidth: 1,
+        }]
+    };
+
+    // Generate chart options
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        devicePixelRatio: 2,
+        plugins: {
+            legend: {
+                display: false,
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return `${context.dataset.label}: ${context.raw}%`;
+                    }
+                }
+            },
+            datalabels: {
+                color: function(context) {
+                    return context.dataset.backgroundColor[context.dataIndex];
+                },
+                anchor: 'end',
+                align: 'top',
+                formatter: function(value) {
+                    return value + '%';
+                },
+                font: {
+                    weight: 'bold',
+                    size: 12
+                },
+                padding: {
+                    top: 8
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(10, 36, 99, 0.1)',
+                    lineWidth: 1,
+                },
+                ticks: {
+                    callback: function(value) {
+                        return value + '%';
+                    },
+                    font: {
+                        size: 12,
+                        weight: 'bold'
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false,
+                },
+                ticks: {
+                    font: {
+                        size: 12,
+                        weight: 'bold'
+                    }
+                }
+            }
+        },
+        elements: {
+            bar: {
+                borderWidth: 0,
+                borderRadius: 4,
+            }
+        },
+        layout: {
+            padding: {
+                top: 20
+            }
+        }
+    };
+
+    // Generate chart HTML
+    const chartHtml = `
+        <div class="p-4 rounded-lg h-full" style="background-color: #E6F3FF; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <h2 class="text-lg font-semibold mb-3 text-left" style="color: #162F6C;">Portfolio vs Benchmarks</h2>
+            <div class="h-48" style="position: relative;">
+                <canvas id="portfolioComparisonChart" style="width: 100% !important; height: 100% !important;"></canvas>
+            </div>
+            <div class="mt-4 p-3 rounded-lg text-center" style="background-color: #0A2463;">
+                <p class="text-sm" style="color: #B6D4F5;">Total Portfolio Value</p>
+                <div class="flex items-center justify-center gap-2">
+                    <p class="text-xl font-bold mt-1" style="color: white;">₹${portfolioTotalValue.toLocaleString(undefined, {maximumFractionDigits: 2})}</p>
+                    <p class="text-sm font-semibold mt-1" style="color: ${portfolioChange >= 0 ? '#22C55E' : '#EF4444'}">(${portfolioChange >= 0 ? '+' : ''}${portfolioChange.toFixed(2)}%)</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add Chart.js script to the HTML
+    const chartScript = `
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Chart.register(ChartDataLabels);
+                const ctx = document.getElementById('portfolioComparisonChart');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: ${JSON.stringify(chartData)},
+                    options: ${JSON.stringify(chartOptions)}
+                });
+            });
+        </script>
+    `;
+
+    const portfolioVsBenchmarkHtml = chartHtml + chartScript;
+
+    const { topMovers, topLosers } = await getTopMoversAndLosers();
+    const topMoversHtml = `
+        <div class="p-4 rounded-lg" style="background-color: #E6F3FF; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); height: 230px;">
+            <h2 class="text-lg font-semibold mb-4 text-left" style="color: #162F6C;">Top Movers / Losers</h2>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <div class="space-y-3">
+                        ${topMovers.map(m => `
+                            <div class="flex flex-col bg-white py-1.5 px-2 rounded-lg shadow-sm" style="border-left: 4px solid #22C55E; transition: box-shadow 0.2s;">
+                                <div class="font-medium" style="color: #162F6C;">${m.symbol}</div>
+                                <div class="text-green-600 text-sm mt-0.5 font-semibold">+${m.pctChange.toFixed(2)}%</div>
+                            </div>
+                        `).join('')}
+                </div>
+                    </div>
+                
+                <div>
+                    <div class="space-y-3">
+                        ${topLosers.map(m => `
+                            <div class="flex flex-col bg-white py-1.5 px-2 rounded-lg shadow-sm" style="border-left: 4px solid #EF4444; transition: box-shadow 0.2s;">
+                                <div class="font-medium" style="color: #162F6C;">${m.symbol}</div>
+                                <div class="text-red-600 text-sm mt-0.5 font-semibold">${m.pctChange.toFixed(2)}%</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Ensure chartsDir is defined and created before any usage
+    const chartsDir = path.join(__dirname, 'charts');
+    if (!fs.existsSync(chartsDir)) fs.mkdirSync(chartsDir, { recursive: true });
+
+    // Prepare heatmap data before HTML generation (fetch weekly change live)
+    const records = parseSimpleCSV(path.join(__dirname, 'securities_data.csv'));
+    const stockMap = {};
+    for (const row of records) {
+        const symbol = row.Securities.trim();
+        const qty = parseFloat(row.Quantity);
+        const rate = parseFloat(row.Rate);
+        if (!stockMap[symbol]) stockMap[symbol] = { totalQty: 0, totalCost: 0 };
+        stockMap[symbol].totalQty += qty;
+        stockMap[symbol].totalCost += qty * rate;
+    }
+    // Calculate weighted average buy price
+    const stockList = Object.keys(stockMap).map(symbol => {
+        const avgBuy = stockMap[symbol].totalQty > 0 ? stockMap[symbol].totalCost / stockMap[symbol].totalQty : 0;
+        return { symbol, avgBuy };
+    });
+    // Get weekly change for each stock (fetch live)
+    const heatmapData = [];
+    for (const { symbol, avgBuy } of stockList) {
+        let ticker = symbol.endsWith('.NS') ? symbol : symbol + '.NS';
+        try {
+            const data = await yahooFinance.historical(ticker, {
+                period1: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+                period2: new Date(),
+                interval: '1d'
+            });
+            if (!data || data.length < 2) continue;
+            const startPrice = data[0].close;
+            const endPrice = data[data.length - 1].close;
+            const pctChange = ((endPrice - startPrice) / startPrice) * 100;
+            heatmapData.push({ symbol, pctChange });
+        } catch (e) {
+            // skip if error
+        }
+    }
+    // Generate treemap chart and embed in first page
+    const treemapPath = path.join(chartsDir, 'portfolio_heatmap_treemap.png');
+    await generateStockChart({
+        labels: heatmapData.map(d => d.symbol),
+        values: heatmapData.map(d => Math.abs(d.pctChange)),
+        pctChanges: heatmapData.map(d => d.pctChange),
+        outputPath: treemapPath
+    });
+
+    // Read treemap image as base64
+    function imageToBase64DataUri(imagePath) {
+        if (!fs.existsSync(imagePath)) return '';
+        const image = fs.readFileSync(imagePath);
+        return `data:image/png;base64,${image.toString('base64')}`;
+    }
+    const treemapBase64 = imageToBase64DataUri(treemapPath);
+
+    // Calculate sector percentages and filter small values
+    const sectorBreakup = await getSectorBreakupData();
+    const totalValue = sectorBreakup.values.reduce((a, b) => a + b, 0);
+    const sectorPercentages = sectorBreakup.values.map(value => ((value / totalValue) * 100).toFixed(1));
+    
+    // Filter sectors less than 5% and combine into "Others"
+    const sectorData = sectorBreakup.labels.map((label, index) => ({
+        label,
+        value: parseFloat(sectorPercentages[index])
+    })).sort((a, b) => b.value - a.value);
+
+    const filteredSectors = sectorData.filter(item => item.value >= 5);
+    const smallSectors = sectorData.filter(item => item.value < 5);
+    const othersValue = smallSectors.reduce((sum, item) => sum + item.value, 0);
+
+    if (othersValue > 0) {
+        filteredSectors.push({
+            label: 'Others',
+            value: parseFloat(othersValue.toFixed(1))
+        });
+    }
+
+    // Calculate stock percentages and filter small values
+    const stockBreakup = getStockBreakupData();
+    const stockPercentages = stockBreakup.values.map(value => ((value / totalValue) * 100).toFixed(1));
+    
+    // Filter stocks less than 5% and combine into "Others"
+    const stockData = stockBreakup.labels.map((label, index) => ({
+        label,
+        value: parseFloat(stockPercentages[index])
+    })).sort((a, b) => b.value - a.value);
+
+    const filteredStocks = stockData.filter(item => item.value >= 5);
+    const smallStocks = stockData.filter(item => item.value < 5);
+    const othersStockValue = smallStocks.reduce((sum, item) => sum + item.value, 0);
+
+    if (othersStockValue > 0) {
+        filteredStocks.push({
+            label: 'Others',
+            value: parseFloat(othersStockValue.toFixed(1))
+        });
+    }
+
+    // Generate blue shades for sectors
+    const generateBlueShades = (count) => {
+        const shades = [];
+        for (let i = 0; i < count; i++) {
+            const hue = 220;
+            const saturation = 85;
+            const lightness = Math.max(25, 75 - (i * 50 / count));
+            shades.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+        }
+        return shades;
+    };
+
+    // Generate sector chart HTML
+    const sectorChartHtml = `
+        <div class="p-4 rounded-lg" style="background-color: #E6F3FF; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); height: 200px;">
+            <h2 class="text-lg font-semibold mb-3 text-left" style="color: #162F6C;">Sectoral Breakup</h2>
+            <div style="height: 150px; position: relative;">
+                <canvas id="sectorChart"></canvas>
+            </div>
+        </div>
+    `;
+
+    // Generate stock chart HTML
+    const stockChartHtml = `
+        <div class="p-4 rounded-lg" style="background-color: #E6F3FF; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); height: 267px; margin-top: -67px;">
+            <h2 class="text-lg font-semibold mb-3 text-left" style="color: #162F6C;">Stock Breakup</h2>
+            <div style="height: 200px; position: relative;">
+                <canvas id="stockChart"></canvas>
+            </div>
+        </div>
+    `;
+
+    // Add sector chart script
+    const sectorChartScript = `
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const ctx = document.getElementById('sectorChart');
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ${JSON.stringify(filteredSectors.map(item => item.label))},
+                        datasets: [{
+                            data: ${JSON.stringify(filteredSectors.map(item => item.value))},
+                            backgroundColor: ${JSON.stringify(generateBlueShades(filteredSectors.length))},
+                            borderColor: 'white',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        devicePixelRatio: 2,
+                        layout: {
+                            padding: {
+                                top: 5,
+                                bottom: 5
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                align: 'center',
+                                labels: {
+                                    boxWidth: 8,
+                                    padding: 6,
+                                    font: {
+                                        size: 10,
+                                        weight: '500'
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(10, 36, 99, 0.95)',
+                                titleFont: {
+                                    size: 13,
+                                    weight: 'bold'
+                                },
+                                bodyFont: {
+                                    size: 12
+                                },
+                                padding: 10,
+                                cornerRadius: 6,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.raw + '%';
+                                    }
+                                }
+                            },
+                            datalabels: {
+                                color: '#fff',
+                                font: {
+                                    weight: 'bold',
+                                    size: 12
+                                },
+                                formatter: function(value, context) {
+                                    if (context.chart.data.labels[context.dataIndex] === 'Others') {
+                                        return '';
+                                    }
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
+                });
+
+                // Stock breakup chart
+                const stockCtx = document.getElementById('stockChart');
+                new Chart(stockCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ${JSON.stringify(filteredStocks.map(item => item.label))},
+                        datasets: [{
+                            data: ${JSON.stringify(filteredStocks.map(item => item.value))},
+                            backgroundColor: ${JSON.stringify(generateBlueShades(filteredStocks.length))},
+                            borderColor: 'white',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        devicePixelRatio: 2,
+                        layout: {
+                            padding: {
+                                top: 5,
+                                bottom: 5
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                align: 'center',
+                                labels: {
+                                    boxWidth: 8,
+                                    padding: 6,
+                                    font: {
+                                        size: 10,
+                                        weight: '500'
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(10, 36, 99, 0.95)',
+                                titleFont: {
+                                    size: 13,
+                                    weight: 'bold'
+                                },
+                                bodyFont: {
+                                    size: 12
+                                },
+                                padding: 10,
+                                cornerRadius: 6,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.raw + '%';
+                                    }
+                                }
+                            },
+                            datalabels: {
+                                color: '#fff',
+                                font: {
+                                    weight: 'bold',
+                                    size: 12
+                                },
+                                formatter: function(value, context) {
+                                    if (context.chart.data.labels[context.dataIndex] === 'Others') {
+                                        return '';
+                                    }
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
+                });
+            });
+        </script>
+    `;
+
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -608,45 +1065,24 @@ const generateHtml = async (config) => {
                         <!-- First page with header -->
                         <div class="page-break">
                             ${headerHtml}
-                        </div>
-                        
-                        <!-- Main content -->
-                        <div class="space-y-8">
-                            ${config.companies && config.companies.length > 0 ? `
-                                <section class="mb-8 avoid-break">
-                                    <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Watchlist Overview</h2>
-                                    <div class="rounded-xl border bg-card text-card-foreground">
-                                        <div class="relative w-full overflow-auto">
-                                            <table class="w-full caption-bottom text-sm">
-                                                <thead class="[&_tr]:border-b">
-                                                    <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                                                        <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Company</th>
-                                                        <th class="h-10 px-2 align-middle font-medium text-muted-foreground text-center">Weekly Close</th>
-                                                        <th class="h-10 px-2 align-middle font-medium text-muted-foreground text-center">Weekly</th>
-                                                        <th class="h-10 px-2 align-middle font-medium text-muted-foreground text-center">YTD</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody class="[&_tr:last-child]:border-0">
-                                                    ${(await Promise.all(marketOverviewRows)).join('')}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </section>` : '<section class="mb-8 avoid-break"><h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Watchlist Overview</h2><div class="rounded-xl border bg-card text-card-foreground"><div class="p-6 text-center">No companies in your watchlist</div></div></section>'}
-                            ${generateGeneralInsights()}
-                            ${generateGeneralAnalystReports()}
-                            <section>
-                                <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Company Updates</h2>
-                                <div class="grid grid-cols-1 gap-6">
-                                    ${await generateCompanyUpdates()}
+                            <div class="grid grid-cols-2 gap-4 mt-8">
+                                <div>${portfolioVsBenchmarkHtml}</div>
+                                <div>${topMoversHtml}</div>
+                            </div>
+                            <div style="height: 20px;"></div>
+                            <div class="flex flex-col gap-2">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>${sectorChartHtml}</div>
+                                    <div>${stockChartHtml}</div>
                                 </div>
-                            </section>
+                            </div>
+                            <div class="mt-4"><!-- Stock Heatmap placeholder --></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    ${sectorChartScript}
 </body>
 </html>
     `.trim();
@@ -762,6 +1198,151 @@ const saveHistoricalDataToFile = async (companies) => {
     }
 };
 
+function parseSimpleCSV(filePath) {
+    const content = fs.readFileSync(filePath, 'utf8');
+    const [headerLine, ...lines] = content.trim().split('\n');
+    const headers = headerLine.split(',').map(h => h.trim());
+    return lines.map(line => {
+        const values = line.split(',').map(v => v.trim());
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = values[i]);
+        return obj;
+    });
+}
+
+const getPortfolioWeeklyChange = async () => {
+    // Read and parse the CSV
+    const records = parseSimpleCSV(path.join(__dirname, 'securities_data.csv'));
+    // Aggregate by symbol
+    const portfolio = {};
+    for (const row of records) {
+        const symbol = row.Securities.trim();
+        const qty = parseFloat(row.Quantity);
+        if (!portfolio[symbol]) {
+            portfolio[symbol] = { quantity: 0 };
+        }
+        portfolio[symbol].quantity += qty;
+    }
+    // Fetch weekly price change for each stock
+    let portfolioStart = 0, portfolioEnd = 0;
+    for (const symbol in portfolio) {
+        let ticker = symbol.endsWith('.NS') ? symbol : symbol + '.NS';
+        try {
+            const data = await yahooFinance.historical(ticker, {
+                period1: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+                period2: new Date(),
+                interval: '1d'
+            });
+            if (data.length < 2) continue;
+            const startPrice = data[0].close;
+            const endPrice = data[data.length - 1].close;
+            portfolioStart += startPrice * portfolio[symbol].quantity;
+            portfolioEnd += endPrice * portfolio[symbol].quantity;
+        } catch (e) {
+            // skip if error
+        }
+    }
+    const portfolioChange = portfolioStart > 0 ? ((portfolioEnd - portfolioStart) / portfolioStart) * 100 : 0;
+    return portfolioChange;
+};
+
+const getBenchmarkWeeklyChange = async (symbol) => {
+    try {
+        const data = await yahooFinance.historical(symbol, {
+            period1: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+            period2: new Date(),
+            interval: '1d'
+        });
+        if (data.length < 2) return 0;
+        const startPrice = data[0].close;
+        const endPrice = data[data.length - 1].close;
+        return ((endPrice - startPrice) / startPrice) * 100;
+    } catch (e) {
+        return 0;
+    }
+};
+
+const getTopMoversAndLosers = async () => {
+    const records = parseSimpleCSV(path.join(__dirname, 'securities_data.csv'));
+    // Aggregate by symbol
+    const portfolio = {};
+    for (const row of records) {
+        const symbol = row.Securities.trim();
+        if (!portfolio[symbol]) {
+            portfolio[symbol] = true;
+        }
+    }
+    const changes = [];
+    for (const symbol in portfolio) {
+        let ticker = symbol.endsWith('.NS') ? symbol : symbol + '.NS';
+        try {
+            const data = await yahooFinance.historical(ticker, {
+                period1: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+                period2: new Date(),
+                interval: '1d'
+            });
+            if (data.length < 2) continue;
+            const startPrice = data[0].close;
+            const endPrice = data[data.length - 1].close;
+            const pctChange = ((endPrice - startPrice) / startPrice) * 100;
+            changes.push({ symbol, pctChange });
+        } catch (e) {
+            // skip if error
+        }
+    }
+    // Sort for top gainers and losers
+    const sorted = changes.sort((a, b) => b.pctChange - a.pctChange);
+    const topMovers = sorted.slice(0, 3);
+    const topLosers = sorted.slice(-3).reverse();
+    return { topMovers, topLosers };
+};
+
+const getPortfolioTotalValue = () => {
+    const records = parseSimpleCSV(path.join(__dirname, 'securities_data.csv'));
+    let total = 0;
+    for (const row of records) {
+        const qty = parseFloat(row.Quantity);
+        const rate = parseFloat(row.Rate);
+        total += qty * rate;
+    }
+    return total;
+};
+
+const getStockBreakupData = () => {
+    const records = parseSimpleCSV(path.join(__dirname, 'securities_data.csv'));
+    const stockMap = {};
+    for (const row of records) {
+        const symbol = row.Securities.trim();
+        const qty = parseFloat(row.Quantity);
+        const rate = parseFloat(row.Rate);
+        if (!stockMap[symbol]) stockMap[symbol] = 0;
+        stockMap[symbol] += qty * rate;
+    }
+    const labels = Object.keys(stockMap);
+    const values = labels.map(l => stockMap[l]);
+    return { labels, values, stockMap };
+};
+
+const getSectorBreakupData = async () => {
+    const records = parseSimpleCSV(path.join(__dirname, 'securities_data.csv'));
+    const sectorMap = {};
+    for (const row of records) {
+        const symbol = row.Securities.trim();
+        const qty = parseFloat(row.Quantity);
+        const rate = parseFloat(row.Rate);
+        let sector = 'Unknown';
+        try {
+            const info = await yahooFinance.quoteSummary(symbol + '.NS', { modules: ['summaryProfile'] });
+            sector = info.summaryProfile?.sector || 'Unknown';
+        } catch (e) {}
+        if (!sectorMap[sector]) sectorMap[sector] = 0;
+        sectorMap[sector] += qty * rate;
+    }
+    const labels = Object.keys(sectorMap);
+    const values = labels.map(l => sectorMap[l]);
+    return { labels, values, sectorMap };
+};
+
 const generateCleanedHtml = async (userId, brokerId, brokerLogo) => {
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SUPABASE_KEY = process.env.SUPABASE_KEY;
@@ -774,6 +1355,8 @@ const generateCleanedHtml = async (userId, brokerId, brokerLogo) => {
         };
     }
 
+    // Comment out historical data and chart generation for testing
+    /*
     // Save historical data to a single file for testing
     const dataSaved = await saveHistoricalDataToFile(config.companies);
     
@@ -811,6 +1394,7 @@ const generateCleanedHtml = async (userId, brokerId, brokerLogo) => {
             console.error(`Error fetching historical data for ${company.symbol}:`, error);
         }
     }
+    */
 
     const htmlOutput = await generateHtml(config);
 

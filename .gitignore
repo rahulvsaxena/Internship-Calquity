@@ -7,6 +7,5 @@ output.pdf
 *.pdf
 *.html
 *.json
-*.png
 historical_data/
 tempCodeRunnerFile.js

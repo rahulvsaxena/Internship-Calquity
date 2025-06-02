@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer';
+import plotly from 'plotly';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -107,10 +108,10 @@ const generateStockChart = async (companySymbol, companyData) => {
                 tickangle: -45
             },
             margin: {
-                l: 70,
+                l: 20,
                 r: 20,
                 t: 20,
-                b: 60
+                b: 20
             },
             paper_bgcolor: 'white',
             plot_bgcolor: 'white'
@@ -201,33 +202,256 @@ const generateStockChart = async (companySymbol, companyData) => {
     }
 };
 
-const generateAllCharts = async () => {
-    try {
-        // Read the historical data file
-        const filePath = path.join(__dirname, 'historical_data', 'all_companies_historical_data.json');
-        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-
-        // Get all company symbols
-        const companies = Object.keys(data);
-        console.log(`Found ${companies.length} companies to process`);
-
-        // Process each company
-        for (const companySymbol of companies) {
-            console.log(`Generating chart for ${companySymbol}...`);
-            try {
-                await generateStockChart(companySymbol, data[companySymbol]);
-            } catch (error) {
-                console.error(`Failed to generate chart for ${companySymbol}:`, error);
-                // Continue with next company even if one fails
-                continue;
-            }
+// Function to generate company bar chart using Plotly
+export const generateCompanyBarChart = async (companyData, outputPath) => {
+    const data = [{
+        x: companyData.dates,
+        y: companyData.prices,
+        type: 'bar',
+        marker: {
+            color: companyData.prices.map(price => 
+                price >= companyData.prices[0] ? '#22C55E' : '#EF4444'
+            )
         }
+    }];
 
-        console.log('All charts have been generated!');
+    const layout = {
+        title: {
+            text: `${companyData.symbol} Price Movement`,
+            font: {
+                size: 16,
+                color: '#162F6C'
+            }
+        },
+        xaxis: {
+            title: 'Date',
+            showgrid: false
+        },
+        yaxis: {
+            title: 'Price (₹)',
+            showgrid: true,
+            gridcolor: '#E5E7EB'
+        },
+        plot_bgcolor: '#FFFFFF',
+        paper_bgcolor: '#FFFFFF',
+        margin: {
+            l: 50,
+            r: 20,
+            t: 50,
+            b: 50
+        }
+    };
+
+    const config = {
+        responsive: true,
+        displayModeBar: false
+    };
+
+    try {
+        await plotly.newPlot(outputPath, data, layout, config);
+        console.log(`Bar chart generated for ${companyData.symbol}`);
     } catch (error) {
-        console.error('Error in generateAllCharts:', error);
+        console.error(`Error generating bar chart for ${companyData.symbol}:`, error);
+    }
+};
+
+// Function to generate all company charts
+export const generateAllCharts = async () => {
+    const historicalDataPath = path.join(__dirname, 'historical_data', 'all_companies_historical_data.json');
+    const chartsDir = path.join(__dirname, 'charts');
+    
+    if (!fs.existsSync(chartsDir)) {
+        fs.mkdirSync(chartsDir, { recursive: true });
+    }
+
+    try {
+        const data = JSON.parse(fs.readFileSync(historicalDataPath, 'utf8'));
+        
+        for (const [symbol, companyData] of Object.entries(data)) {
+            const dates = companyData.data.map(d => d.date);
+            const prices = companyData.data.map(d => d.close);
+            
+            const chartData = {
+                symbol,
+                dates,
+                prices
+            };
+            
+            const outputPath = path.join(chartsDir, `${symbol.toLowerCase()}_chart.png`);
+            await generateCompanyBarChart(chartData, outputPath);
+        }
+    } catch (error) {
+        console.error('Error generating charts:', error);
+    }
+};
+
+// Utility to generate a pie chart using Plotly and Puppeteer
+const generatePieChart = async ({ labels, values, outputPath, title }) => {
+    try {
+        // Generate pastel colors for each label
+        const pastelColors = labels.map((_, index) => {
+            const hue = (index * 137.5) % 360; // Golden angle approximation for good distribution
+            return `hsl(${hue}, 70%, 75%)`; // Slightly darker pastel colors
+        });
+
+        const pieData = [{
+            values: values,
+            labels: labels,
+            type: 'pie',
+            textinfo: 'label+percent', // Show label and percentage on pie slices
+            insidetextorientation: 'radial',
+            textposition: values.map(v => {
+                const percentage = (v / values.reduce((a, b) => a + b, 0)) * 100;
+                return percentage < 5 ? 'outside' : 'inside'; // Show labels outside for small slices
+            }),
+            textfont: {
+                size: 32, // Set a larger base font size
+                family: 'Arial, sans-serif'
+            },
+            marker: {
+                colors: pastelColors,
+                line: {
+                    color: '#fff',
+                    width: 2
+                }
+            },
+            // Add pull effect for small slices
+            pull: values.map(v => {
+                const percentage = (v / values.reduce((a, b) => a + b, 0)) * 100;
+                return percentage < 5 ? 0.1 : 0; // Pull out small slices
+            })
+        }];
+        const layout = {
+            height: 600,
+            width: 900,
+            paper_bgcolor: 'white',
+            plot_bgcolor: 'white',
+            showlegend: false,
+            margin: {
+                l: 10,
+                r: 10,
+                t: 10,
+                b: 10
+            }
+        };
+        // Create temporary HTML file
+        const tempHtmlPath = path.join(__dirname, 'temp_pie.html');
+        const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>body { margin: 0; padding: 0; }</style>
+</head>
+<body>
+    <div id="piechart"></div>
+    <script>
+        const data = ${JSON.stringify(pieData)};
+        const layout = ${JSON.stringify(layout)};
+        Plotly.newPlot('piechart', data, layout).then(() => { window.chartReady = true; });
+    </script>
+</body>
+</html>`;
+        fs.writeFileSync(tempHtmlPath, htmlContent);
+        // Launch Puppeteer
+        const browser = await puppeteer.launch({ headless: 'new' });
+        const page = await browser.newPage();
+        await page.setViewport({ width: 900, height: 600 }); // Updated viewport size for larger chart
+        await page.goto(`file://${tempHtmlPath}`);
+        await page.waitForFunction(() => window.chartReady === true, { timeout: 10000 });
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const chartElement = await page.$('#piechart');
+        // Ensure directory exists
+        const dir = path.dirname(outputPath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        await chartElement.screenshot({ path: outputPath, omitBackground: true });
+        await browser.close();
+        fs.unlinkSync(tempHtmlPath);
+        console.log(`Pie chart saved at: ${outputPath}`);
+        return outputPath;
+    } catch (error) {
+        console.error('Error generating pie chart:', error);
         throw error;
     }
 };
 
-export { generateStockChart, generateAllCharts };
+// Utility to generate a treemap chart using Plotly and Puppeteer
+const generateTreemapChart = async ({ labels, values, pctChanges, outputPath }) => {
+    try {
+        // Prepare labels for display: SYMBOL<br>%CHANGE%
+        const displayLabels = labels.map((symbol, i) => {
+            const pct = pctChanges[i];
+            const sign = pct > 0 ? '+' : '';
+            return `${symbol}<br>${sign}${pct.toFixed(2)}%`;
+        });
+        // Color code: green for positive, red for negative, neutral for near zero
+        const colors = pctChanges.map(pct => {
+            if (pct > 0.2) return 'hsl(120, 60%, 70%)'; // green
+            if (pct < -0.2) return 'hsl(0, 70%, 70%)'; // red
+            return '#f1f5f9'; // neutral
+        });
+        const data = [{
+            type: 'treemap',
+            labels: displayLabels,
+            parents: labels.map(() => ''), // All root nodes
+            values: values,
+            marker: { colors },
+            textinfo: 'label',
+            textfont: { size: 24, family: 'Arial, sans-serif', color: '#222' },
+            hovertemplate: '%{label}<extra></extra>',
+            outsidetextfont: { size: 20, color: '#222' },
+            tiling: { orientation: 'v' }
+        }];
+        const layout = {
+            width: 900,
+            height: 400,
+            paper_bgcolor: 'white',
+            plot_bgcolor: 'white',
+            margin: { l: 10, r: 10, t: 10, b: 10 }
+        };
+        // Create temporary HTML file
+        const tempHtmlPath = path.join(__dirname, 'temp_treemap.html');
+        const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>body { margin: 0; padding: 0; }</style>
+</head>
+<body>
+    <div id="treemap"></div>
+    <script>
+        const data = ${JSON.stringify(data)};
+        const layout = ${JSON.stringify(layout)};
+        Plotly.newPlot('treemap', data, layout).then(() => { window.chartReady = true; });
+    </script>
+</body>
+</html>`;
+        fs.writeFileSync(tempHtmlPath, htmlContent);
+        // Launch Puppeteer
+        const browser = await puppeteer.launch({ headless: 'new' });
+        const page = await browser.newPage();
+        await page.setViewport({ width: 900, height: 400 });
+        await page.goto(`file://${tempHtmlPath}`);
+        await page.waitForFunction(() => window.chartReady === true, { timeout: 10000 });
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const chartElement = await page.$('#treemap');
+        // Ensure directory exists
+        const dir = path.dirname(outputPath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        await chartElement.screenshot({ path: outputPath, omitBackground: true });
+        await browser.close();
+        fs.unlinkSync(tempHtmlPath);
+        console.log(`Treemap chart saved at: ${outputPath}`);
+        return outputPath;
+    } catch (error) {
+        console.error('Error generating treemap chart:', error);
+        throw error;
+    }
+};
+
+export { generateStockChart, generateAllCharts, generatePieChart, generateTreemapChart };

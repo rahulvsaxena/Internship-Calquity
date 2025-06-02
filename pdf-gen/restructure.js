@@ -4,6 +4,8 @@ import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import Bottleneck from 'bottleneck';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
@@ -14,6 +16,9 @@ const limiter = new Bottleneck({
   reservoirRefreshAmount: 100,
   reservoirRefreshInterval: 60 * 1000, // must be divisible by 250
 });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function restructureCompany(table_data, company) {
 const analysis_prompt = `
@@ -83,10 +88,15 @@ You are analyzing financial news articles for a specific company. Your task is t
 export async function fetchCompanyData(company) {
   try {
     const date = new Date().toISOString().split('T')[0];
-    // Check if `${company}-currentdate.json` exists
-    if (fs.existsSync(`./${company}-${date}.json`)) {
+    const companyJsonDir = path.join(__dirname, 'company_json');
+    if (!fs.existsSync(companyJsonDir)) {
+      fs.mkdirSync(companyJsonDir, { recursive: true });
+    }
+    const companyJsonPath = path.join(companyJsonDir, `${company}-${date}.json`);
+    // Check if file exists in company_json dir
+    if (fs.existsSync(companyJsonPath)) {
       // Read file and return JSON data
-      const data = fs.readFileSync(`./${company}-${date}.json`);
+      const data = fs.readFileSync(companyJsonPath);
       return JSON.parse(data);
     }
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
@@ -100,7 +110,7 @@ export async function fetchCompanyData(company) {
     const filtered_data = data.filter(article => article.article_type !== 'None of the Above from Link' && article.article_type !== 'None of the Above' && article.article_type !== null && article.summary !== null);
 
     if (filtered_data.length === 0) {
-      fs.writeFileSync(`./${company}-${date}.json`, JSON.stringify([], null, 2));
+      fs.writeFileSync(companyJsonPath, JSON.stringify([], null, 2));
       return [];
     }
     // Create markdown table string
@@ -110,8 +120,8 @@ export async function fetchCompanyData(company) {
     }
 
     const response = await restructureCompany(table_data, company);
-    // Write response to text file "company-currentdate.json"
-    fs.writeFileSync(`./${company}-${date}.json`, JSON.stringify(response, null, 2));
+    // Write response to company_json dir
+    fs.writeFileSync(companyJsonPath, JSON.stringify(response, null, 2));
     return response;
 
   } catch (error) {
