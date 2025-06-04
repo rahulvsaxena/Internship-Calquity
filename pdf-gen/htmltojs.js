@@ -243,7 +243,7 @@ async function getSubscription(userId) {
 }
 
 
-async function generateAndSendPdf(userId, brokerId, brokerLogo, phoneNumber = null, emailId = null) {
+async function generateAndSendPdf(userId, brokerId, brokerLogo, phoneNumber, emailId) {
   const regex = /\/\*([\s\S]*?)\*\//g;
   const { html, brokerName } = await generateCleanedHtml(userId, brokerId, brokerLogo);
   if (!html) {
