@@ -994,6 +994,41 @@ const generateHtml = async (config) => {
                                 ${stockHeatmapHtml}
                             </div>
                         </div>
+
+                        <!-- Second page with general insights and reports -->
+                        <div class="page-break">
+                            <div class="space-y-8">
+                                ${generateGeneralInsights()}
+                                ${generateGeneralAnalystReports()}
+                                ${config.companies && config.companies.length > 0 ? `
+                                    <section class="mb-8 avoid-break">
+                                        <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Watchlist Overview</h2>
+                                        <div class="rounded-xl border bg-card text-card-foreground">
+                                            <div class="relative w-full overflow-auto">
+                                                <table class="w-full caption-bottom text-sm">
+                                                    <thead class="[&_tr]:border-b">
+                                                        <tr class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                                                            <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">Company</th>
+                                                            <th class="h-10 px-2 align-middle font-medium text-muted-foreground text-center">Weekly Close</th>
+                                                            <th class="h-10 px-2 align-middle font-medium text-muted-foreground text-center">Weekly</th>
+                                                            <th class="h-10 px-2 align-middle font-medium text-muted-foreground text-center">YTD</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="[&_tr:last-child]:border-0">
+                                                        ${(await Promise.all(marketOverviewRows)).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </section>` : '<section class="mb-8 avoid-break"><h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Watchlist Overview</h2><div class="rounded-xl border bg-card text-card-foreground"><div class="p-6 text-center">No companies in your watchlist</div></div></section>'}
+                                <section>
+                                    <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">Company Updates</h2>
+                                    <div class="grid grid-cols-1 gap-6">
+                                        ${await generateCompanyUpdates()}
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1002,8 +1037,8 @@ const generateHtml = async (config) => {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
             Chart.register(ChartDataLabels);
             
             // Sector Chart
