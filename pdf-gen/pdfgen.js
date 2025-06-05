@@ -731,7 +731,7 @@ const generateHtml = async (config) => {
 
     // Generate chart HTML
     const chartHtml = `
-        <div class="p-4 rounded-lg" style="background-color: #E6F3FF; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); height: 305px;">
+        <div class="p-4 rounded-lg" style="background-color: white; border: 1px solid #E5E7EB; border-radius: 8px; height: 305px;">
             <h2 class="text-lg font-semibold mb-3 text-left" style="color: #162F6C;">Portfolio vs Benchmarks</h2>
             <div class="h-36" style="position: relative;">
                 <canvas id="portfolioComparisonChart" style="width: 100% !important; height: 100% !important;"></canvas>
@@ -740,7 +740,7 @@ const generateHtml = async (config) => {
                 <p class="text-sm" style="color: #B6D4F5;">Total Portfolio Value</p>
                 <div class="flex items-center justify-center gap-2">
                     <p class="text-xl font-bold mt-1" style="color: white;">₹${portfolioTotalValue.toLocaleString(undefined, {maximumFractionDigits: 2})}</p>
-                    <p class="text-sm font-medium mt-1" style="color: ${portfolioValueChange >= 0 ? '#22C55E' : '#EF4444'}">
+                    <p class="text-sm font-bold mt-1 px-2 py-0.5 rounded-xl" style="background-color: ${portfolioValueChange >= 0 ? '#15803d' : '#b91c1c'}; color: white; font-weight: 700;">
                         ${portfolioValueChange >= 0 ? '+' : ''}${portfolioValueChange.toFixed(2)}%
                     </p>
                 </div>
@@ -769,14 +769,14 @@ const generateHtml = async (config) => {
 
     const { topMovers, topLosers } = await getTopMoversAndLosers();
     const topMoversHtml = `
-        <div class="p-4 rounded-lg" style="background-color: #E6F3FF; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); height: 220px; width: 348px; margin-top: -240px;">
+        <div class="p-4 rounded-lg" style="background-color: white; border: 1px solid #E5E7EB; border-radius: 8px; height: 220px; width: 348px; margin-top: -240px;">
             <h2 class="text-lg font-semibold mb-4 text-left" style="color: #162F6C;">Top Movers / Losers</h2>
             
             <div class="grid grid-cols-2 gap-4 w-full">
                 <div class="w-full">
                     <div class="space-y-3">
                         ${topMovers.map(m => `
-                            <div class="flex flex-col bg-white py-1.5 px-2 rounded-lg shadow-sm w-full" style="border-left: 4px solid #22C55E; transition: box-shadow 0.2s;">
+                            <div class="flex flex-col bg-white py-1.5 px-2 rounded-lg w-full" style="border: 1px solid #E5E7EB; border-left: 4px solid #22C55E;">
                                 <div class="font-medium text-sm" style="color: #162F6C;">${m.symbol}</div>
                                 <div class="text-green-600 text-sm mt-0.5">+${Math.abs(m.pctChange).toFixed(2)}%</div>
                             </div>
@@ -787,7 +787,7 @@ const generateHtml = async (config) => {
                 <div class="w-full">
                     <div class="space-y-3">
                         ${topLosers.map(m => `
-                            <div class="flex flex-col bg-white py-1.5 px-2 rounded-lg shadow-sm w-full" style="border-left: 4px solid #EF4444; transition: box-shadow 0.2s;">
+                            <div class="flex flex-col bg-white py-1.5 px-2 rounded-lg w-full" style="border: 1px solid #E5E7EB; border-left: 4px solid #EF4444;">
                                 <div class="font-medium text-sm" style="color: #162F6C;">${m.symbol}</div>
                                 <div class="text-red-600 text-sm mt-0.5">-${Math.abs(m.pctChange).toFixed(2)}%</div>
                             </div>
@@ -859,61 +859,59 @@ const generateHtml = async (config) => {
     // Calculate sector percentages and filter small values
     const sectorBreakup = await getSectorBreakupData();
     const totalValue = sectorBreakup.values.reduce((a, b) => a + b, 0);
-    const sectorPercentages = sectorBreakup.values.map(value => ((value / totalValue) * 100).toFixed(1));
-    
-    // Filter sectors less than 5% and combine into "Others"
+
+    // Calculate percentages and round them
     const sectorData = sectorBreakup.labels.map((label, index) => ({
         label,
-        value: parseFloat(sectorPercentages[index])
+        value: Math.round((sectorBreakup.values[index] / totalValue) * 100 * 10) / 10
     })).sort((a, b) => b.value - a.value);
 
-    const filteredSectors = sectorData.filter(item => item.value >= 5);
-    const smallSectors = sectorData.filter(item => item.value < 5);
-    const othersValue = smallSectors.reduce((sum, item) => sum + item.value, 0);
+    // Separate sectors >= 5% and < 5%
+    const largeSectors = sectorData.filter(sector => sector.value >= 5);
+    const smallSectors = sectorData.filter(sector => sector.value < 5);
 
+    // Calculate Others
+    const othersValue = smallSectors.reduce((sum, sector) => sum + sector.value, 0);
+
+    // Build final array
+    const filteredSectors = [...largeSectors];
     if (othersValue > 0) {
         filteredSectors.push({
             label: 'Others',
-            value: parseFloat(othersValue.toFixed(1))
+            value: othersValue
         });
     }
 
-    // Calculate stock percentages and filter small values
-    const stockBreakup = getStockBreakupData();
-    const stockPercentages = stockBreakup.values.map(value => ((value / totalValue) * 100).toFixed(1));
-    
-    // Filter stocks less than 5% and combine into "Others"
-    const stockData = stockBreakup.labels.map((label, index) => ({
-        label,
-        value: parseFloat(stockPercentages[index])
-    })).sort((a, b) => b.value - a.value);
+    // CRITICAL: Force exact 100% sum by adjusting the largest sector
+    const currentSum = filteredSectors.reduce((sum, sector) => sum + sector.value, 0);
+    const difference = 100 - currentSum;
 
-    const filteredStocks = stockData.filter(item => item.value >= 5);
-    const smallStocks = stockData.filter(item => item.value < 5);
-    const othersStockValue = smallStocks.reduce((sum, item) => sum + item.value, 0);
-
-    if (othersStockValue > 0) {
-        filteredStocks.push({
-            label: 'Others',
-            value: parseFloat(othersStockValue.toFixed(1))
-        });
+    if (Math.abs(difference) > 0.001) { // Only adjust if difference is significant
+        // Find the largest sector and adjust it
+        const largestIndex = filteredSectors.reduce((maxIndex, sector, index) => 
+            sector.value > filteredSectors[maxIndex].value ? index : maxIndex, 0);
+        
+        filteredSectors[largestIndex].value = 
+            Math.round((filteredSectors[largestIndex].value + difference) * 10) / 10;
     }
 
-    // Generate blue shades for sectors
-    const generateBlueShades = (count) => {
-        const shades = [];
-        for (let i = 0; i < count; i++) {
-            const hue = 220;
-            const saturation = 85;
-            const lightness = Math.max(25, 75 - (i * 50 / count));
-            shades.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
-        }
-        return shades;
-    };
+    console.log('Final sum:', filteredSectors.reduce((sum, s) => sum + s.value, 0));
+
+        // Generate blue shades for sectors
+        const generateBlueShades = (count) => {
+            const shades = [];
+            for (let i = 0; i < count; i++) {
+                const hue = 220;
+                const saturation = 85;
+                const lightness = Math.max(25, 75 - (i * 50 / count));
+                shades.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+            }
+            return shades;
+        };
 
     // Generate sector chart HTML
     const sectorChartHtml = `
-        <div class="p-4 rounded-lg" style="background-color: #E6F3FF; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); height: 540px;">
+        <div class="p-4 rounded-lg" style="background-color: white; border: 1px solid #E5E7EB; border-radius: 8px; height: 540px;">
             <h2 class="text-lg font-semibold mb-3 text-left" style="color: #162F6C;">Sectoral Breakup</h2>
             <div style="height: 470px; position: relative; display: flex; justify-content: center; align-items: center;">
                 <canvas id="sectorChart"></canvas>
@@ -923,7 +921,7 @@ const generateHtml = async (config) => {
 
     // Generate stock chart HTML
     const stockChartHtml = `
-        <div class="p-4 rounded-lg" style="background-color: #E6F3FF; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); height: 267px; margin-top: -65px;">
+        <div class="p-4 rounded-lg" style="background-color: white; border: 1px solid #E5E7EB; border-radius: 8px; height: 267px; margin-top: -65px;">
             <h2 class="text-lg font-semibold mb-3 text-left" style="color: #162F6C;">Stock Breakup</h2>
             <div style="height: 200px; position: relative;">
                 <canvas id="stockChart"></canvas>
@@ -933,7 +931,7 @@ const generateHtml = async (config) => {
 
     // Generate stock heatmap HTML
     const stockHeatmapHtml = `
-        <div class="p-4 rounded-lg" style="background-color: #E6F3FF; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); height: 280px; margin-top: -13px;">
+        <div class="p-4 rounded-lg" style="background-color: white; border: 1px solid #E5E7EB; border-radius: 8px; height: 280px; margin-top: -13px;">
             <h2 class="text-lg font-semibold mb-2 text-left" style="color: #162F6C;">Stock Heatmap - Past Week Performance</h2>
             <div id="stockHeatmap" style="height: 220px; width: 95%; position: relative; margin: 0 auto;"></div>
         </div>
@@ -1044,142 +1042,149 @@ const generateHtml = async (config) => {
             // Sector Chart
             const sectorCtx = document.getElementById('sectorChart');
             new Chart(sectorCtx, {
-                    type: 'pie',
-                    data: {
-                        labels: ${JSON.stringify(filteredSectors.map(item => item.label))},
-                        datasets: [{
-                            data: ${JSON.stringify(filteredSectors.map(item => item.value))},
-                            backgroundColor: ${JSON.stringify(generateBlueShades(filteredSectors.length))},
-                            borderColor: 'white',
-                            borderWidth: 2
-                        }]
+                type: 'pie',
+                data: {
+                    labels: ${JSON.stringify(filteredSectors.map(item => item.label))},
+                    datasets: [{
+                        data: ${JSON.stringify(filteredSectors.map(item => item.value))}, // Use exact values for calculation
+                        backgroundColor: ${JSON.stringify(generateBlueShades(filteredSectors.length))},
+                        borderColor: 'transparent',
+                        spacing: 0,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    devicePixelRatio: 2,
+                    layout: {
+                        padding: {
+                            top: 5,
+                            bottom: 0
+                        }
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        devicePixelRatio: 2,
-                        layout: {
-                            padding: {
-                                top: 5,
-                                bottom: 0
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            align: 'center',
+                            labels: {
+                                boxWidth: 10,
+                                padding: 2,
+                                font: {
+                                    size: 12,
+                                    weight: '500'
+                                }
                             }
                         },
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                align: 'center',
-                                labels: {
-                                    boxWidth: 8,
-                                    padding: 1,
-                                    font: {
-                                        size: 10,
-                                        weight: '500'
-                                    }
-                                }
+                        tooltip: {
+                            backgroundColor: 'rgba(10, 36, 99, 0.95)',
+                            titleFont: {
+                                size: 13,
+                                weight: 'bold'
                             },
-                            tooltip: {
-                                backgroundColor: 'rgba(10, 36, 99, 0.95)',
-                                titleFont: {
-                                    size: 13,
-                                    weight: 'bold'
-                                },
-                                bodyFont: {
-                                    size: 12
-                                },
-                                padding: 10,
-                                cornerRadius: 6,
-                                callbacks: {
-                                    label: function(context) {
-                                        return context.label + ': ' + context.raw + '%';
-                                    }
-                                }
+                            bodyFont: {
+                                size: 12
                             },
-                            datalabels: {
-                                color: '#fff',
-                                font: {
-                                    weight: 'bold',
-                                    size: 12
-                                },
-                                formatter: function(value, context) {
-                                    if (context.chart.data.labels[context.dataIndex] === 'Others') {
-                                        return '';
-                                    }
-                                    return value + '%';
+                            padding: 10,
+                            cornerRadius: 6,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.raw.toFixed(1) + '%';
                                 }
                             }
+                        },
+                        datalabels: {
+                            color: '#fff',
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            },
+                            formatter: function(value, context) {
+                                if (context.chart.data.labels[context.dataIndex] === 'Others') {
+                                    return '';
+                                }
+                                return value.toFixed(1) + '%';
+                            }
+                        }
+                    },
+                    elements: {
+                        arc: {
+                            borderWidth: 0,
+                            spacing: 0
                         }
                     }
-                });
+                }
+            });
 
             // Stock Chart
-                const stockCtx = document.getElementById('stockChart');
-                new Chart(stockCtx, {
-                    type: 'pie',
-                    data: {
-                        labels: ${JSON.stringify(filteredStocks.map(item => item.label))},
-                        datasets: [{
-                            data: ${JSON.stringify(filteredStocks.map(item => item.value))},
-                            backgroundColor: ${JSON.stringify(generateBlueShades(filteredStocks.length))},
-                            borderColor: 'white',
-                            borderWidth: 2
-                        }]
+            const stockCtx = document.getElementById('stockChart');
+            new Chart(stockCtx, {
+                type: 'pie',
+                data: {
+                    labels: ${JSON.stringify(filteredSectors.map(item => item.label))},
+                    datasets: [{
+                        data: ${JSON.stringify(filteredSectors.map(item => item.value))},
+                        backgroundColor: ${JSON.stringify(generateBlueShades(filteredSectors.length))},
+                        borderColor: 'transparent',
+                        spacing: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    devicePixelRatio: 1,
+                    layout: {
+                        padding: {
+                            top: 5,
+                            bottom: 5
+                        }
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        devicePixelRatio: 2,
-                        layout: {
-                            padding: {
-                                top: 5,
-                                bottom: 5
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            align: 'center',
+                            labels: {
+                                boxWidth: 8,
+                                padding: 6,
+                                font: {
+                                    size: 10,
+                                    weight: '500'
+                                }
                             }
                         },
-                        plugins: {
-                            legend: {
-                                position: 'right',
-                                align: 'center',
-                                labels: {
-                                    boxWidth: 8,
-                                    padding: 6,
-                                    font: {
-                                        size: 10,
-                                        weight: '500'
-                                    }
-                                }
+                        tooltip: {
+                            backgroundColor: 'rgba(10, 36, 99, 0.95)',
+                            titleFont: {
+                                size: 13,
+                                weight: 'bold'
                             },
-                            tooltip: {
-                                backgroundColor: 'rgba(10, 36, 99, 0.95)',
-                                titleFont: {
-                                    size: 13,
-                                    weight: 'bold'
-                                },
-                                bodyFont: {
-                                    size: 12
-                                },
-                                padding: 10,
-                                cornerRadius: 6,
-                                callbacks: {
-                                    label: function(context) {
-                                        return context.label + ': ' + context.raw + '%';
-                                    }
-                                }
+                            bodyFont: {
+                                size: 12
                             },
-                            datalabels: {
-                                color: '#fff',
-                                font: {
-                                    weight: 'bold',
-                                    size: 12
-                                },
-                                formatter: function(value, context) {
-                                    if (context.chart.data.labels[context.dataIndex] === 'Others') {
-                                        return '';
-                                    }
-                                    return value + '%';
+                            padding: 10,
+                            cornerRadius: 6,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.raw + '%';
                                 }
+                            }
+                        },
+                        datalabels: {
+                            color: '#fff',
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            },
+                            formatter: function(value, context) {
+                                if (context.chart.data.labels[context.dataIndex] === 'Others') {
+                                    return '';
+                                }
+                                return value + '%';
                             }
                         }
                     }
-                });
+                }
+            });
 
             // Stock Heatmap using Plotly
             const heatmapData = ${JSON.stringify(heatmapData)};
@@ -1212,7 +1217,7 @@ const generateHtml = async (config) => {
                         '+' + d.pctChange.toFixed(2) + '%' : 
                         d.pctChange.toFixed(2) + '%';
                     const value = '₹' + (d.value/100000).toFixed(1) + 'L';
-                    return symbol + '<br>' + change + '<br>' + value;
+                    return JSON.stringify('<b>' + symbol + '</b><br>' + change + '<br>' + value).slice(1, -1);
                 }),
                 parents: heatmapData.map(() => ''),
                 values: heatmapData.map(d => d.weight),
@@ -1235,14 +1240,15 @@ const generateHtml = async (config) => {
                 textfont: {
                     size: 14,
                     color: 'white',
-                    family: 'Inter, sans-serif',
-                    weight: 'bold'
+                    family: 'Inter Black, sans-serif',
+                    weight: 'bold',
                 },
                 uniformtext: {
                     enabled: true,
                     minsize: 6,
                     maxsize: 14,
-                    mode: 'show'
+                    mode: 'show',
+                    bold: true
                 },
                 hovertemplate: 
                     '<b>%{id}</b><br>' +
@@ -1583,8 +1589,8 @@ const generateCleanedHtml = async (userId, brokerId, brokerLogo) => {
     
     if (dataSaved) {
         // Import and call plot_stock.js to generate charts
-        const { generateAllCharts } = await import('./plot_stock.js');
-        await generateAllCharts();
+        // const { generateAllCharts } = await import('./plot_stock.js');
+        // await generateAllCharts();
     }
 
     // Fetch historical data for each company

@@ -1,8 +1,10 @@
 {
   "dependencies": {
+    "chart.js": "^4.4.9",
     "chartjs-node-canvas": "^5.0.0",
     "chartjs-plugin-datalabels": "^2.2.0",
     "node-fetch": "^3.3.2",
+    "plotly.js-dist": "^3.0.1",
     "puppeteer": "^24.10.0"
   }
 }

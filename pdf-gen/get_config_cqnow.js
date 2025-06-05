@@ -237,7 +237,6 @@ async function getFinancialConfig(userId, brokerId, brokerLogo, supabaseUrl, sup
     // }));
 
     const newsItems = await fetchCompanyData(companyInfo.name);
-    
     // Get stock data using yahoo-finance
     const stockSymbol = `${symbol}.NS`;
     let stockData;

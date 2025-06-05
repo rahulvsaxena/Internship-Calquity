@@ -228,14 +228,14 @@ const generateCompanyBarChart = async (companyData, symbol) => {
             type: 'candlestick',
             increasing: {line: {color: 'green'}},
             decreasing: {line: {color: 'red'}}
-        }];
+    }];
 
-        const layout = {
+    const layout = {
             yaxis: {
-                title: {
+        title: {
                     text: 'Price (INR)',
-                    font: {
-                        size: 16, 
+            font: {
+                size: 16,
                         family: 'Arial, sans-serif',
                         color: '#000',
                         weight: 'bold'
@@ -247,8 +247,8 @@ const generateCompanyBarChart = async (companyData, symbol) => {
                 gridwidth: 2,
                 gridcolor: 'rgba(200, 200, 200, 0.8)',
                 automargin: true
-            },
-            xaxis: {
+        },
+        xaxis: {
                 title: {
                     text: 'Date',
                     font: {
@@ -261,7 +261,7 @@ const generateCompanyBarChart = async (companyData, symbol) => {
                 },
                 rangeslider: {
                     visible: false
-                },
+        },
                 gridwidth: 2,
                 gridcolor: 'rgba(200, 200, 200, 0.8)',
                 tickformat: '%d-%m-%y',
@@ -270,20 +270,20 @@ const generateCompanyBarChart = async (companyData, symbol) => {
                     size: 12
                 }
             },
-            margin: {
+        margin: {
                 l: 20,
-                r: 20,
+            r: 20,
                 t: 10,
                 b: 80  // Increased bottom margin for dates
             },
             paper_bgcolor: 'white',
             plot_bgcolor: 'white'
-        };
+    };
 
-        const config = {
-            responsive: true,
-            displayModeBar: false
-        };
+    const config = {
+        responsive: true,
+        displayModeBar: false
+    };
 
         // Create a temporary HTML file for the chart
         const tempHtml = `
@@ -386,7 +386,7 @@ const generateAllCharts = async () => {
         if (!fs.existsSync(dataPath)) {
             console.error('Historical data file not found');
             return;
-        }
+    }
 
         const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
         

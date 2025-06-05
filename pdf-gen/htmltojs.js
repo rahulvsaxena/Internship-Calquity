@@ -445,7 +445,7 @@ console.log(userList.data.length);
 
 for (let i = userList.data.length - 1; i >= 0; i--) {
   const user = userList.data[i];
-  if (user.emailAddresses[0].emailAddress !== "pratham@calquity.com") {
+  if (user.emailAddresses[0].emailAddress !== "rahul.saxena@calquity.com") {
     continue;
   }
   // if (user.emailAddresses[0].emailAddress !== "aditagarwal10@gmail.com" && user.emailAddresses[0].emailAddress !== "choudharysahil1710@gmail.com") {
