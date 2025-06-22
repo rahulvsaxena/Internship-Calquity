@@ -637,10 +637,10 @@ const generateHtml = async (config) => {
         datasets: [{
             label: 'Change (%)',
             data: [
-                Number(portfolioChange.toFixed(1)),
-                Number(niftyChange.toFixed(1)),
-                Number(sensexChange.toFixed(1)),
-                Number(nextNiftyChange.toFixed(1))
+                Number(portfolioChange.toFixed(2)),
+                Number(niftyChange.toFixed(2)),
+                Number(sensexChange.toFixed(2)),
+                Number(nextNiftyChange.toFixed(2))
             ],
             backgroundColor: [
                 '#0A2463', // Deep navy for portfolio
@@ -683,7 +683,7 @@ const generateHtml = async (config) => {
                     size: 12
                 },
                 padding: {
-                    top: 8
+                    top: -14,
                 }
             }
         },
@@ -774,22 +774,22 @@ const generateHtml = async (config) => {
             
             <div class="grid grid-cols-2 gap-4 w-full">
                 <div class="w-full">
-                    <div class="space-y-3">
-                        ${topMovers.map(m => `
-                            <div class="flex flex-col bg-white py-1.5 px-2 rounded-lg w-full" style="border: 1px solid #E5E7EB; border-left: 4px solid #22C55E;">
-                                <div class="font-medium text-sm" style="color: #162F6C;">${m.symbol}</div>
-                                <div class="text-green-600 text-sm mt-0.5">+${Math.abs(m.pctChange).toFixed(2)}%</div>
-                            </div>
-                        `).join('')}
-                    </div>
+                <div class="space-y-3">
+                    ${topMovers.map(m => `
+                        <div class="flex flex-col bg-white py-1.5 px-2 rounded-lg w-full" style="border: 1px solid #E5E7EB; border-left: 4px solid #22C55E; padding: 0.28rem">
+                            <div class="font-medium text-xs" style="color: #162F6C;">${m.symbol}</div>
+                            <div class="text-green-600 text-xs mt-0.5">+${Math.abs(m.pctChange).toFixed(2)}%</div>
+                        </div>
+                    `).join('')}
+                </div>
                 </div>
                 
                 <div class="w-full">
                     <div class="space-y-3">
                         ${topLosers.map(m => `
-                            <div class="flex flex-col bg-white py-1.5 px-2 rounded-lg w-full" style="border: 1px solid #E5E7EB; border-left: 4px solid #EF4444;">
-                                <div class="font-medium text-sm" style="color: #162F6C;">${m.symbol}</div>
-                                <div class="text-red-600 text-sm mt-0.5">-${Math.abs(m.pctChange).toFixed(2)}%</div>
+                            <div class="flex flex-col bg-white py-1.5 px-2 rounded-lg w-full" style="border: 1px solid #E5E7EB; border-left: 4px solid #EF4444; padding: 0.28rem">
+                                <div class="font-medium text-xs" style="color: #162F6C;">${m.symbol}</div>
+                                <div class="text-red-600 text-xs mt-0.5">-${Math.abs(m.pctChange).toFixed(2)}%</div>
                             </div>
                         `).join('')}
                     </div>
@@ -846,8 +846,12 @@ const generateHtml = async (config) => {
         }
     }
 
-    // Sort heatmap data by absolute percentage change
-    heatmapData.sort((a, b) => Math.abs(b.pctChange) - Math.abs(a.pctChange));
+    // Sort heatmap data by absolute monetary change
+    heatmapData.sort((a, b) => {
+        const monetaryChangeA = Math.abs(a.value * a.pctChange / 100);
+        const monetaryChangeB = Math.abs(b.value * b.pctChange / 100);
+        return monetaryChangeB - monetaryChangeA;
+    });
 
     // Read image as base64
     function imageToBase64DataUri(imagePath) {
@@ -913,8 +917,15 @@ const generateHtml = async (config) => {
     const sectorChartHtml = `
         <div class="p-4 rounded-lg" style="background-color: white; border: 1px solid #E5E7EB; border-radius: 8px; height: 540px;">
             <h2 class="text-lg font-semibold mb-3 text-left" style="color: #162F6C;">Sectoral Breakup</h2>
-            <div style="height: 470px; position: relative; display: flex; justify-content: center; align-items: center;">
+            <div style="height: 330px; position: relative; display: flex; justify-content: center; align-items: center; margin-top: 1.5rem;">
                 <canvas id="sectorChart"></canvas>
+            </div>
+            <div class="mt-4">
+                <table class="w-full text-xs">
+                    <tbody id="sectorLegend">
+                        <!-- Legend will be populated by JavaScript -->
+                    </tbody>
+                </table>
             </div>
         </div>
     `;
@@ -933,7 +944,7 @@ const generateHtml = async (config) => {
     const stockHeatmapHtml = `
         <div class="p-4 rounded-lg" style="background-color: white; border: 1px solid #E5E7EB; border-radius: 8px; height: 280px; margin-top: -13px;">
             <h2 class="text-lg font-semibold mb-2 text-left" style="color: #162F6C;">Stock Heatmap - Past Week Performance</h2>
-            <div id="stockHeatmap" style="height: 220px; width: 95%; position: relative; margin: 0 auto;"></div>
+            <div id="stockHeatmap" style="height: 220px; width: 95%; position: relative; margin: 0 auto;  margin-right: 1.7rem;"></div>
         </div>
     `;
 
@@ -963,9 +974,6 @@ const generateHtml = async (config) => {
         }
         .heatmap-cell:hover {
             filter: brightness(1.1);
-        }
-        .js-plotly-plot .plotly .main-svg {
-            border-radius: 20px;
         }
         .js-plotly-plot .plotly .treemap path {
             rx: 20px;
@@ -1065,16 +1073,7 @@ const generateHtml = async (config) => {
                     },
                     plugins: {
                         legend: {
-                            position: 'bottom',
-                            align: 'center',
-                            labels: {
-                                boxWidth: 10,
-                                padding: 2,
-                                font: {
-                                    size: 12,
-                                    weight: '500'
-                                }
-                            }
+                            display: false, // Disable default legend
                         },
                         tooltip: {
                             backgroundColor: 'rgba(10, 36, 99, 0.95)',
@@ -1115,6 +1114,40 @@ const generateHtml = async (config) => {
                     }
                 }
             });
+
+            // Create custom legend table
+            const legendData = ${JSON.stringify(filteredSectors.map((item, index) => ({
+                label: item.label,
+                value: item.value,
+                color: generateBlueShades(filteredSectors.length)[index]
+            })))};
+            
+            const legendTable = document.getElementById('sectorLegend');
+            const itemsPerRow = 2;
+            
+            for (let i = 0; i < legendData.length; i += itemsPerRow) {
+                const row = document.createElement('tr');
+                
+                for (let j = 0; j < itemsPerRow; j++) {
+                    const item = legendData[i + j];
+                    if (item) {
+                        const cell = document.createElement('td');
+                        cell.className = 'p-1';
+                        cell.innerHTML = 
+                            '<div class="flex items-center gap-2">' +
+                                '<div class="w-3 h-3 rounded-full" style="background-color: ' + item.color + '"></div>' +
+                                '<span class="font-medium">' + item.label + '</span>' +
+                            '</div>';
+                        row.appendChild(cell);
+                    } else {
+                        // Add empty cell to maintain table structure
+                        const cell = document.createElement('td');
+                        row.appendChild(cell);
+                    }
+                }
+                
+                legendTable.appendChild(row);
+            }
 
             // Stock Chart
             const stockCtx = document.getElementById('stockChart');
@@ -1190,21 +1223,23 @@ const generateHtml = async (config) => {
             const heatmapData = ${JSON.stringify(heatmapData)};
             
             // Define color scales for positive and negative changes
-            const getColor = (pctChange) => {
+            const getColor = (pctChange, value) => {
                 const absChange = Math.abs(pctChange);
-                const maxChange = Math.max(...heatmapData.map(x => Math.abs(x.pctChange)));
-                const intensity = absChange / maxChange;
                 
                 if (pctChange >= 0) {
-                    // Green shades from light to dark
-                    if (intensity < 0.33) return '#86efac'; // Light green
-                    if (intensity < 0.66) return '#22c55e'; // Medium green
-                    return '#15803d'; // Dark green
+                    if (absChange < 1.6) return '#3da43d';
+                    if (absChange < 3.2) return '#208020';
+                    if (absChange < 4.8) return '#0d5c0d';
+                    if (absChange < 6.4) return '#094109';
+                    if (absChange < 8.0) return '#062e06';
+                    return '#041b04';
                 } else {
-                    // Pure red shades from light to dark
-                    if (intensity < 0.33) return '#ff6b6b'; // Light red
-                    if (intensity < 0.66) return '#ff0000'; // Medium red
-                    return '#cc0000'; // Dark red
+                    if (absChange < 1.6) return '#f89494';
+                    if (absChange < 3.2) return '#f17171';
+                    if (absChange < 4.8) return '#df5454';
+                    if (absChange < 6.4) return '#bf3939';
+                    if (absChange < 8.0) return '#9f1f1f';
+                    return '#7f0000';
                 }
             };
             
@@ -1220,9 +1255,9 @@ const generateHtml = async (config) => {
                     return JSON.stringify('<b>' + symbol + '</b><br>' + change + '<br>' + value).slice(1, -1);
                 }),
                 parents: heatmapData.map(() => ''),
-                values: heatmapData.map(d => d.weight),
+                values: heatmapData.map(d => d.value),
                 marker: {
-                    colors: heatmapData.map(d => getColor(d.pctChange)),
+                    colors: heatmapData.map(d => getColor(d.pctChange, d.value)),
                     line: {
                         color: 'transparent',
                         width: 0
@@ -1233,7 +1268,7 @@ const generateHtml = async (config) => {
                         l: 8,
                         r: 8
                     },
-                    cornerradius: 10
+                    cornerradius: 2
                 },
                 textinfo: 'label',
                 textposition: 'middle center',
@@ -1588,9 +1623,9 @@ const generateCleanedHtml = async (userId, brokerId, brokerLogo) => {
     const dataSaved = await saveHistoricalDataToFile(config.companies);
     
     if (dataSaved) {
-        // Import and call plot_stock.js to generate charts
-        // const { generateAllCharts } = await import('./plot_stock.js');
-        // await generateAllCharts();
+        //Import and call plot_stock.js to generate charts
+        const { generateAllCharts } = await import('./plot_stock.js');
+        await generateAllCharts();
     }
 
     // Fetch historical data for each company
