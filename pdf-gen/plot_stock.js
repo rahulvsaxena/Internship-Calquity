@@ -160,7 +160,7 @@ const generateStockChart = async (companySymbol, companyData) => {
         // Set viewport size
         await page.setViewport({
             width: 1200,
-            height: 800
+            height: 650
         });
 
         // Load the HTML file
@@ -213,14 +213,15 @@ const generateCompanyBarChart = async (companyData, symbol) => {
             return;
         }
 
-        const dates = companyData.data.map(d => d.date);
+        // Only use dates present in the data (trading days)
+        const dates = companyData.data.map(d => d.date); // Already only trading days
         const opens = companyData.data.map(d => d.open);
         const highs = companyData.data.map(d => d.high);
         const lows = companyData.data.map(d => d.low);
         const closes = companyData.data.map(d => d.close);
 
         const data = [{
-            x: dates,
+            x: dates, // Only trading days
             open: opens,
             high: highs,
             low: lows,
@@ -228,14 +229,14 @@ const generateCompanyBarChart = async (companyData, symbol) => {
             type: 'candlestick',
             increasing: {line: {color: 'green'}},
             decreasing: {line: {color: 'red'}}
-    }];
+        }];
 
-    const layout = {
+        const layout = {
             yaxis: {
-        title: {
+                title: {
                     text: 'Price (INR)',
-            font: {
-                size: 16,
+                    font: {
+                        size: 16,
                         family: 'Arial, sans-serif',
                         color: '#000',
                         weight: 'bold'
@@ -244,11 +245,12 @@ const generateCompanyBarChart = async (companyData, symbol) => {
                 },
                 autorange: true,
                 fixedrange: false,
-                gridwidth: 2,
-                gridcolor: 'rgba(200, 200, 200, 0.8)',
-                automargin: true
-        },
-        xaxis: {
+                gridwidth: 1,
+                gridcolor: 'rgba(200, 200, 200, 0.5)',
+                automargin: true,
+                nticks: 6
+            },
+            xaxis: {
                 title: {
                     text: 'Date',
                     font: {
@@ -261,29 +263,31 @@ const generateCompanyBarChart = async (companyData, symbol) => {
                 },
                 rangeslider: {
                     visible: false
-        },
-                gridwidth: 2,
-                gridcolor: 'rgba(200, 200, 200, 0.8)',
+                },
+                gridwidth: 1,
+                gridcolor: 'rgba(200, 200, 200, 0.5)',
                 tickformat: '%d-%m-%y',
                 tickangle: -45,
                 tickfont: {
                     size: 12
-                }
+                },
+                type: 'category',
+                nticks: 8
             },
-        margin: {
+            margin: {
                 l: 20,
-            r: 20,
+                r: 20,
                 t: 10,
-                b: 80  // Increased bottom margin for dates
+                b: 80
             },
             paper_bgcolor: 'white',
             plot_bgcolor: 'white'
-    };
+        };
 
-    const config = {
-        responsive: true,
-        displayModeBar: false
-    };
+        const config = {
+            responsive: true,
+            displayModeBar: false
+        };
 
         // Create a temporary HTML file for the chart
         const tempHtml = `

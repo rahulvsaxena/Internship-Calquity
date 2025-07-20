@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer';
-import generateCleanedHtml from './pdfgen.js';
+import generateCleanedHtml from './pdfgen_unlisted.js';
 import axios from 'axios';
 import { createReadStream, unlinkSync } from 'fs';
 import FormData from 'form-data';
@@ -188,58 +188,14 @@ async function sendToWhatsapp(pdfFilename, phoneNumber, weekly_report_date, name
 }
 
 async function getSubscription(userId) {
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-  const { data: subscriptionResponse } = await supabase.from('subscriptions').select('id,is_bypassed').eq('user_id', userId);
-
-  if (subscriptionResponse.length === 0) {
-    return { success: false, error: 'Subscription not found', status: 404 };
-  }
-
-  const instance = new Razorpay({
-    key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
-  });
-
-  return new Promise((resolve) => {
-    instance.subscriptions.fetch(subscriptionResponse[0].id, async (err, subscription) => {
-      if (err) {
-        resolve({ success: false, error: 'Subscription not found', status: 404 });
-        return;
-      }
-
-      if (!subscription) {
-        resolve({ success: false, error: 'Subscription not found', status: 404 });
-        return;
-      }
-
-      if (subscription.notes?.userId !== userId) {
-        resolve({ success: false, error: 'Unauthorized', status: 401 });
-        return;
-      }
-
-      let isFreeTrial = subscription.status === 'authenticated';
-      let isBypassed = false;
-      console.log('Subscription status', subscription.status);
-      if (subscriptionResponse[0].is_bypassed === true && subscription.status === 'created') {
-        isFreeTrial = true;
-        isBypassed = true;
-      }
-      const isActive = subscription.status === 'active' || isFreeTrial || subscription.status === 'pending';
-      let numberOfDaysLeft = -1;
-      if (isFreeTrial) {
-        const subscriptionStartAt = subscription.start_at;
-        const currentTime = Math.floor(Date.now() / 1000);
-        numberOfDaysLeft = Math.ceil((subscriptionStartAt - currentTime) / (24 * 60 * 60));
-      }
-
-      if (!isActive) {
-        resolve({ success: false, error: 'Subscription is inactive', status: 400 });
-        return;
-      }
-
-      resolve({ success: true, isFreeTrial, numberOfDaysLeft, subscriptionStartAt: subscription.start_at, link: subscription.short_url });
-    });
-  });
+  // Always assume subscription is valid
+  return {
+    success: true,
+    isFreeTrial: false,
+    numberOfDaysLeft: 30, // or any default value
+    subscriptionStartAt: Math.floor(Date.now() / 1000),
+    link: ''
+  };
 }
 
 

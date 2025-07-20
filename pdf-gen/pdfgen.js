@@ -287,6 +287,84 @@ const generateHtml = async (config) => {
       `;
     };
 
+    // Function to read corporate actions from JSON file
+    const getCorporateActions = () => {
+        try {
+            const corporateActionsPath = path.join(__dirname, '..', 'corporate_actions', 'corporate_actions_latest.json');
+            
+            if (fs.existsSync(corporateActionsPath)) {
+                const data = fs.readFileSync(corporateActionsPath, 'utf8');
+                return JSON.parse(data);
+            }
+            return [];
+        } catch (error) {
+            console.error('Error reading corporate actions:', error);
+            return [];
+        }
+    };
+
+    // Debug function to show all corporate actions (for testing)
+    const generateAllCorporateActionsDebug = () => {
+        const corporateActions = getCorporateActions();
+        if (!corporateActions.length) return '';
+
+        console.log(`Total corporate actions found: ${corporateActions.length}`);
+        corporateActions.forEach((action, index) => {
+            console.log(`${index + 1}. ${action.short_name} (${action.NSE_Symbol}) - ${action.Purpose} - ${action.Ex_date}`);
+        });
+
+        // Show ALL actions without date filtering for debugging
+        const allActions = corporateActions;
+
+        if (!allActions.length) return '';
+
+        const actionsHtml = allActions.map(action => {
+            const actionType = action.Purpose.includes('Dividend') ? 'Dividend' : 
+                             action.Purpose.includes('Bonus') ? 'Bonus' : 
+                             action.Purpose.includes('Split') ? 'Stock Split' : 
+                             action.Purpose.includes('Rights') ? 'Rights Issue' : 'Corporate Action';
+            
+            // Check if this action is in your portfolio
+            const isInPortfolio = config.companies.some(company => 
+                company.symbol === action.NSE_Symbol || 
+                company.symbol === action.short_name ||
+                company.name === action.long_name
+            );
+            
+            const portfolioBadge = isInPortfolio ? 
+                '<span class="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">In Portfolio</span>' : 
+                '<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">Not in Portfolio</span>';
+
+            return `
+                <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-gray-800">${action.short_name}</span>
+                            <span class="text-sm text-gray-600">(${action.NSE_Symbol})</span>
+                            ${portfolioBadge}
+                        </div>
+                        <span class="text-sm text-gray-600 font-medium">${action.Ex_date}</span>
+                    </div>
+                    <div class="text-sm text-gray-700 mb-2">
+                        <strong>Type:</strong> ${actionType}
+                    </div>
+                    <div class="text-sm text-gray-700">
+                        <strong>Purpose:</strong> ${action.Purpose}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <section class="mb-8 avoid-break">
+                <h2 class="text-2xl font-semibold mb-4 flex items-center gap-2">All Corporate Actions (Debug - Including Non-Portfolio)</h2>
+                <div class="space-y-3">
+                    ${actionsHtml}
+                </div>
+            </section>
+        `;
+    };
+
     const generateCompanyUpdates = async () => {
         const companyUpdates = await Promise.all(config.companies.map(async company => {
             let logoHtml;
@@ -347,10 +425,10 @@ const generateHtml = async (config) => {
             // Get the chart image path
             const chartImagePath = path.join(__dirname, 'historical_data', `${company.symbol.toLowerCase()}_chart.png`);
             const chartImageHtml = fs.existsSync(chartImagePath) 
-                ? `<div class="w-full mb-4">
+                ? `<div style="width: 100%; max-width: 700px;">
                     <img src="data:image/png;base64,${fs.readFileSync(chartImagePath).toString('base64')}" 
                          alt="${company.name} Price Chart" 
-                         class="w-full h-auto rounded-lg shadow-sm" />
+                         style="width: 100%; max-width: 700px; height: auto; border-radius: 0.5rem;" />
                    </div>`
                 : '';
 
@@ -486,6 +564,91 @@ const generateHtml = async (config) => {
                 `;
             };
 
+            const generateCorporateActionsHtml = () => {
+                const corporateActions = getCorporateActions();
+                if (!corporateActions.length) return '<div class="p-3 bg-blue-50 rounded-lg border border-blue-200 text-gray-600"><span style="font-size: 1rem; font-weight: 600;">no recent corporate actions in the past month</span></div>';
+
+                // Debug: Log all corporate actions for this company
+                console.log(`Checking corporate actions for company: ${company.name} (${company.symbol})`);
+
+                // Filter corporate actions for this company
+                const companyActions = corporateActions.filter(action => 
+                    action.NSE_Symbol === company.symbol || 
+                    action.short_name === company.symbol ||
+                    action.long_name === company.name
+                );
+                // Debug: Log matched actions
+                if (companyActions.length > 0) {
+                    console.log(`Found ${companyActions.length} corporate actions for ${company.name}:`, 
+                        companyActions.map(a => `${a.short_name} - ${a.Purpose} (${a.Ex_date})`));
+                }
+
+                // Filter for recent/future actions (within last 36 months or next 36 months)
+                const now = new Date();
+                const sixMonthsAgo = new Date(now.getTime() - (72 * 30 * 24 * 60 * 60 * 1000));
+                const sixMonthsFromNow = new Date(now.getTime() + (72 * 30 * 24 * 60 * 60 * 1000));
+
+                const recentActions = companyActions.filter(action => {
+                    try {
+                        const exDate = new Date(action.Ex_date);
+                        const isRecent = exDate >= sixMonthsAgo && exDate <= sixMonthsFromNow;
+                        if (!isRecent) {
+                            console.log(`Filtered out old action for ${company.name}: ${action.Purpose} (${action.Ex_date})`);
+                        }
+                        return isRecent;
+                    } catch (error) {
+                        // If date parsing fails, include the action
+                        console.log(`Date parsing failed for ${company.name}: ${action.Ex_date}`);
+                        return true;
+                    }
+                });
+
+                // Debug: Log recent actions
+                if (recentActions.length > 0) {
+                    console.log(`Found ${recentActions.length} recent corporate actions for ${company.name}`);
+                }
+
+                if (!recentActions.length) {
+                    return '<div class="p-3 bg-blue-50 rounded-lg border border-blue-200 text-gray-600"><span style="font-size: 0.9rem; font-weight: 200;">no recent corporate actions in the past month</span></div>';
+                }
+
+                const actionsHtml = recentActions.map(action => {
+                    const actionType = action.Purpose.includes('Dividend') ? 'Dividend' : 
+                                     action.Purpose.includes('Bonus') ? 'Bonus' : 
+                                     action.Purpose.includes('Split') ? 'Stock Split' : 
+                                     action.Purpose.includes('Rights') ? 'Rights Issue' : 'Corporate Action';
+                    
+                    const actionIcon = actionType === 'Dividend' ? 
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dollar-sign"><line x1="12" x2="12" y1="1" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>' :
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>';
+
+                    return `
+                        <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="text-blue-600">
+                                        ${actionIcon}
+                                    </div>
+                                    <span class="font-semibold text-blue-800">${actionType}</span>
+                                </div>
+                                <span class="text-sm text-blue-600 font-medium">${action.Ex_date}</span>
+                            </div>
+                            <div class="text-sm text-gray-700 mb-2">
+                                <strong>Purpose:</strong> ${action.Purpose}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="mb-4">
+                        <div class="space-y-3">
+                            ${actionsHtml}
+                        </div>
+                    </div>
+                `;
+            };
+
             const generateBlockDealsHtml = () => {
                 if (!company.blockDeals?.length) return '';
 
@@ -540,7 +703,6 @@ const generateHtml = async (config) => {
                     </div>
                   </div>
               `).join('');
-
                 return `
                   <div class="mb-4">
                       <h4 class="font-semibold mb-2 text-left">Reports from the Analysts' Desk</h4>
@@ -555,6 +717,18 @@ const generateHtml = async (config) => {
             if (isNumeric && company.news.length === 0) {
                 return "";
             }
+
+            // Generate Corporate Actions HTML and check if there are actions
+            const corporateActionsHtml = generateCorporateActionsHtml();
+            const hasCorporateActions = corporateActionsHtml && corporateActionsHtml.trim() !== '';
+
+            // Flex row for chart and corporate actions
+            const chartAndActionsHtml = hasCorporateActions ? `
+                <div style="display: flex; gap: 2rem; align-items: flex-start; width: 100%;">
+                    <div style="flex: 1 1 0; min-width: 0;">${chartImageHtml}</div>
+                    <div style="flex: 1 1 0; min-width: 0;">${corporateActionsHtml}</div>
+                </div>
+            ` : chartImageHtml;
 
             return `
               <div class="rounded-xl border bg-card text-card-foreground avoid-break">
@@ -575,7 +749,7 @@ const generateHtml = async (config) => {
                 </div>
                 <div class="p-4">
                   <div class="space-y-4">
-                    ${chartImageHtml}
+                    ${chartAndActionsHtml}
                     ${generateInsightsHtml()}
                     ${generateAnalystReportsHtml()}
                     ${generateNewsHtml()}
@@ -1670,4 +1844,3 @@ const generateCleanedHtml = async (userId, brokerId, brokerLogo) => {
 
 export { saveHistoricalDataToFile };
 export default generateCleanedHtml;
-

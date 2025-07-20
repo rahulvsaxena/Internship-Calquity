@@ -9,7 +9,7 @@ import json
 CSV_FILE_PATH = r"C:\Users\Rahul Saxena\Documents\GitHub\Internship @Calquity\CQNow-Report\corporate_actions\companies.csv"
 
 # Define a generous lookback period to increase the chance of finding a recent action
-LOOKBACK_DAYS = 365 * 2 # Looking back 2 years to find recent actions (adjust if needed)
+LOOKBACK_DAYS = 31 # Looking back 1 month to find recent actions
 
 # Define BSE internal download folder (for the bse library's own temporary files)
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -76,19 +76,16 @@ with BSE(download_folder=BSE_DOWNLOAD_FOLDER) as bse:
     for index, row in df.iterrows():
         nse_symbol = str(row['Securities']).strip()
         print(f"Processing {nse_symbol}...")
-
         bse_scrip_code = None
         try:
             bse_scrip_code = bse.getScripCode(nse_symbol)
             print(f"  Found BSE scrip code for {nse_symbol}: {bse_scrip_code}")
-
             actions = bse.actions(
                 scripcode=bse_scrip_code,
                 from_date=from_date,
                 to_date=to_date,
                 segment='equity'
             )
-
             if actions:
                 # --- Debugging: Print keys of the first action found for ANY company ---
                 # This will only print once, at the first company that returns actions.
@@ -98,8 +95,6 @@ with BSE(download_folder=BSE_DOWNLOAD_FOLDER) as bse:
                     print(f"Full first action details: {json.dumps(actions[0], indent=2, default=convert_datetime_to_str)}")
                     print("----------------------------------------------------\n")
                     sample_structure_printed = True
-
-
                 # Define the sorting key function: prioritize 'exdate' (YYYYMMDD), then 'Ex_date' (DD Mon YYYY)
                 def get_sort_date(action_item):
                     # Priority 1: 'exdate' (YYYYMMDD numeric string)
