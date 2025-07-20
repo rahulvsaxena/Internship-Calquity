@@ -17,6 +17,7 @@
     "@clerk/backend": "^1.21.2",
     "@google-cloud/local-auth": "^3.0.1",
     "@supabase/supabase-js": "^2.47.6",
+    "@tavily/core": "^0.5.10",
     "axios": "^1.7.9",
     "bottleneck": "^2.19.5",
     "canvas": "^3.1.0",
